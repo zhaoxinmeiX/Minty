@@ -321,7 +321,7 @@ export default function StatsScreen() {
       <Pressable style={[styles.rankingItem, { borderBottomColor: theme.border }]} onPress={() => openBillsByCategory(item)}>
         <View style={styles.rankingLeft}>
           <View style={[styles.iconBox, { backgroundColor: theme.background }]}>
-            <Icon size={20} color={theme.text} />
+            <Icon size={18} color={theme.text} />
           </View>
           <View>
             <Text style={[styles.rankingName, { color: theme.text }]}>{item.category}</Text>
@@ -454,19 +454,19 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 12, fontWeight: '600' },
   totalValue: { fontSize: 18, fontWeight: '700', lineHeight: 38 },
   emptyChart: { height: 200, justifyContent: 'center', alignItems: 'center' },
-  rankingTitle: { alignSelf: 'flex-start', marginHorizontal: 20, marginTop: 20, fontSize: 14, fontWeight: 'bold' },
-  listContent: { paddingBottom: 40 },
+  rankingTitle: { alignSelf: 'flex-start', marginHorizontal: 20, marginTop: 12, fontSize: 14, fontWeight: 'bold' },
+  listContent: { paddingBottom: 24 },
   rankingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
     marginHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  rankingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  rankingName: { fontSize: 12, fontWeight: '600', marginBottom: 2 },
+  rankingLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconBox: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  rankingName: { fontSize: 12, fontWeight: '600', marginBottom: 1 },
   rankingCount: { fontSize: 11 },
   rankingAmount: { fontSize: 13, fontWeight: '700' },
   emptyList: { padding: 40, alignItems: 'center' },
