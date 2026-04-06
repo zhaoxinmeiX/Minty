@@ -1,57 +1,103 @@
+import { Tabs } from 'expo-router';
+import { BarChart3, Calendar, Feather, Home, Settings } from 'lucide-react-native';
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { View } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+import { Colors } from '@/constants/Colors';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const themeColors = Colors.light;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
+        tabBarActiveTintColor: themeColors.tint,
+        tabBarInactiveTintColor: themeColors.tabIconDefault,
+        tabBarStyle: {
+          backgroundColor: themeColors.card,
+          borderTopColor: themeColors.border,
+          height: 85,
+          paddingBottom: 20,
+          paddingTop: 10,
+        },
+        tabBarLabelStyle: {
+          marginTop: 6,
+          fontSize: 10,
+          fontWeight: '500',
+        },
+        headerStyle: {
+          backgroundColor: themeColors.card,
+          shadowOpacity: 0,
+          elevation: 0,
+        },
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+        headerTintColor: themeColors.text,
         headerShown: useClientOnlyValue(false, true),
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          headerShown: false,
+          title: '首页',
+          tabBarIcon: ({ color }) => <Home size={26} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="calendar"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          headerShown: false,
+          title: '日历',
+          tabBarIcon: ({ color }) => <Calendar size={26} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          headerShown: false,
+          tabBarLabel: () => null,
+          tabBarIcon: ({ color }) => (
+            <View
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: themeColors.accent,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: -40,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 5,
+                elevation: 8,
+                borderWidth: 4,
+                borderColor: themeColors.card,
+              }}
+            >
+              <Feather size={32} color="#fff" />
+            </View>
+          ),
+          tabBarStyle: { display: 'none' }, // 盖住底部tab标签
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        options={{
+          headerShown: false,
+          title: '统计',
+          tabBarIcon: ({ color }) => <BarChart3 size={26} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          headerShown: false,
+          title: '设置',
+          tabBarIcon: ({ color }) => <Settings size={26} color={color} />,
         }}
       />
     </Tabs>

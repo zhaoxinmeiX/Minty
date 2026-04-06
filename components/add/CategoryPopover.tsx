@@ -1,0 +1,94 @@
+import { Colors } from '@/constants/Colors';
+import { getIconComponent } from '@/src/constants/icons';
+import { CategoryPopoverProps } from '@/src/types';
+import { LayoutGrid } from 'lucide-react-native';
+import React from 'react';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs, position, selectedSub, onSelect, onClose }) => {
+  const theme = Colors.light;
+  const accentColor = theme.accent;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.overlayCentered}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={[styles.popoverBubble, { backgroundColor: theme.popoverBg, position: 'absolute', top: position.top, left: position.left }]}>
+          <View style={[styles.bubbleArrow, { left: position.arrowLeft, backgroundColor: theme.popoverBg }]} />
+          <ScrollView contentContainerStyle={styles.bubbleScroll}>
+            <View style={styles.bubbleGrid}>
+              <Pressable onPress={() => onSelect(null)} style={styles.bubbleItem}>
+                <View style={[styles.bubbleIcon, { backgroundColor: theme.popoverIconBg }, !selectedSub && { backgroundColor: accentColor }]}>
+                  <LayoutGrid size={20} color={!selectedSub ? '#000' : theme.popoverText} />
+                </View>
+                <Text style={[styles.bubbleText, { color: theme.popoverText }, !selectedSub && { color: accentColor, fontWeight: 'bold' }]}>全部</Text>
+              </Pressable>
+              {subs.map((sub) => {
+                const SubIcon = getIconComponent(sub.icon);
+                const isSubSel = selectedSub?.id === sub.id;
+                return (
+                  <Pressable key={sub.id} onPress={() => onSelect(sub)} style={styles.bubbleItem}>
+                    <View style={[styles.bubbleIcon, { backgroundColor: theme.popoverIconBg }, isSubSel && { backgroundColor: accentColor }]}>
+                      <SubIcon size={20} color={isSubSel ? '#000' : theme.popoverText} />
+                    </View>
+                    <Text style={[styles.bubbleText, { color: theme.popoverText }, isSubSel && { color: accentColor, fontWeight: 'bold' }]}>{sub.name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  overlayCentered: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  popoverBubble: {
+    width: '94%',
+    borderRadius: 24,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  bubbleArrow: {
+    position: 'absolute',
+    top: -10,
+    width: 20,
+    height: 20,
+    transform: [{ rotate: '45deg' }],
+  },
+  bubbleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  bubbleItem: {
+    width: '16.66%', // 100% / 6 columns
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  bubbleIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  bubbleText: {
+    fontSize: 10,
+    textAlign: 'center',
+  },
+  bubbleScroll: {
+    maxHeight: 400,
+  },
+});

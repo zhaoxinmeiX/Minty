@@ -1,19 +1,22 @@
 const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+export const ACCENT_COLOR = '#FF9500';
 
-export default {
+export const Colors = {
   light: {
     text: '#000',
-    background: '#fff',
+    background: '#FDFDFB', // Very light warm background
     tint: tintColorLight,
-    tabIconDefault: '#ccc',
+    tabIconDefault: '#999',
     tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#fff',
-    background: '#000',
-    tint: tintColorDark,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorDark,
+    card: '#fff',
+    border: '#E4E6EB',
+    expense: '#E63946',
+    income: '#2A9D8F',
+    accent: ACCENT_COLOR,
+    popoverBg: '#FFFFFF',
+    popoverText: '#333',
+    popoverIconBg: '#F5F5F5',
+    modalOverlay: 'rgba(0,0,0,0.3)',
+    spendingCard: '#FFD89B', // Peach orange for the summary card
   },
 };
