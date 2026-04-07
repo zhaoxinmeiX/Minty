@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { BarChart3, Calendar as CalendarIcon, ChevronDown } from 'lucide-react-native';
@@ -31,14 +32,7 @@ export default function CalendarScreen() {
   const { ledgers } = useLedgers();
   const activeLedger = ledgers.find((l) => l.id === activeLedgerId);
 
-  const getLocalDateString = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const todayStr = useMemo(() => getLocalDateString(new Date()), []);
+  const todayStr = useMemo(() => dayjs().format('YYYY-MM-DD'), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7)); // YYYY-MM
   const [recordsByDate, setRecordsByDate] = useState<{ [date: string]: RecordItem[] }>({});
@@ -50,19 +44,27 @@ export default function CalendarScreen() {
   const [isMonthPickerVisible, setIsMonthPickerVisible] = useState(false);
 
   const calendarRef = useRef<any>(null);
+  const loadedRecordMonthsRef = useRef<Set<string>>(new Set());
 
-  const fetchMonthSummaries = useCallback(() => {
-    const [year, month] = currentMonth.split('-');
-    const summaries = getDailySummaryByMonth(db, activeLedgerId, year, month);
-    const summaryMap: { [date: string]: { expense: number; income: number } } = {};
-    summaries.forEach((s) => {
-      summaryMap[s.date] = { expense: s.total_expense, income: s.total_income };
-    });
-    setDailySummaries(summaryMap);
-  }, [db, activeLedgerId, currentMonth]);
+  const fetchMonthSummaries = useCallback(
+    (monthStr: string = currentMonth) => {
+      const [year, month] = monthStr.split('-');
+      const summaries = getDailySummaryByMonth(db, activeLedgerId, year, month);
+      const summaryMap: { [date: string]: { expense: number; income: number } } = {};
+      summaries.forEach((s) => {
+        summaryMap[s.date] = { expense: s.total_expense, income: s.total_income };
+      });
+      setDailySummaries(summaryMap);
+    },
+    [db, activeLedgerId, currentMonth],
+  );
 
   const fetchRecordsForMonth = useCallback(
-    (monthStr: string) => {
+    (monthStr: string, force = false) => {
+      if (!force && loadedRecordMonthsRef.current.has(monthStr)) {
+        return;
+      }
+
       const [year, month] = monthStr.split('-');
       const data = getRecordsByLedgerAndMonth(db, activeLedgerId, year, month);
 
@@ -75,22 +77,28 @@ export default function CalendarScreen() {
       });
 
       setRecordsByDate((prev) => ({ ...prev, ...grouped }));
+      loadedRecordMonthsRef.current.add(monthStr);
     },
     [db, activeLedgerId],
   );
 
+  React.useEffect(() => {
+    loadedRecordMonthsRef.current.clear();
+    setRecordsByDate({});
+    setDailySummaries({});
+  }, [activeLedgerId]);
+
   useFocusEffect(
     useCallback(() => {
-      fetchMonthSummaries();
-      fetchRecordsForMonth(selectedDate.slice(0, 7));
-      setSelectedDateContext(selectedDate);
+      fetchMonthSummaries(currentMonth);
+      fetchRecordsForMonth(currentMonth, true);
       setLastTab('calendar');
-    }, [fetchMonthSummaries, fetchRecordsForMonth, selectedDate, setSelectedDateContext, setLastTab]),
+    }, [currentMonth, fetchMonthSummaries, fetchRecordsForMonth, setLastTab]),
   );
 
   // Still need to trigger fetch when currentMonth changes from swipe
   React.useEffect(() => {
-    fetchMonthSummaries();
+    fetchMonthSummaries(currentMonth);
     // Also preload records for the visible month to ensure marks/list work smoothly
     fetchRecordsForMonth(currentMonth);
   }, [fetchMonthSummaries, fetchRecordsForMonth, currentMonth]);
@@ -155,27 +163,31 @@ export default function CalendarScreen() {
   };
 
   const dayRecords = useMemo(() => recordsByDate[selectedDate] || [], [recordsByDate, selectedDate]);
+  const monthDisplay = useMemo(() => {
+    const parsed = dayjs(`${currentMonth}-01`, 'YYYY-MM-DD', true);
+    return parsed.isValid() ? parsed.format('YYYY年M月') : currentMonth;
+  }, [currentMonth]);
 
   const sections = useMemo(() => {
     const total = dayRecords.reduce((acc, r) => acc + (r.type === 'expense' ? r.amount : 0), 0);
 
-    // Safer date parsing for header
-    const [y, m, d] = selectedDate.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
+    const selected = dayjs(selectedDate, 'YYYY-MM-DD', true);
+    if (!selected.isValid()) {
+      return { title: selectedDate, total, data: dayRecords };
+    }
+
+    const m = selected.month() + 1;
+    const d = selected.date();
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-    const todayDate = new Date();
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(todayDate.getDate() - 1);
-
-    const isToday = y === todayDate.getFullYear() && m === todayDate.getMonth() + 1 && d === todayDate.getDate();
-    const isYesterday = y === yesterdayDate.getFullYear() && m === yesterdayDate.getMonth() + 1 && d === yesterdayDate.getDate();
+    const isToday = selected.isSame(dayjs(), 'day');
+    const isYesterday = selected.isSame(dayjs().subtract(1, 'day'), 'day');
 
     let titlePrefix = '';
     if (isToday) titlePrefix = '今天 ';
     else if (isYesterday) titlePrefix = '昨天 ';
 
-    const title = `${titlePrefix}${m}月${d}日 ${weekdays[dateObj.getDay()]}`;
+    const title = `${titlePrefix}${m}月${d}日 ${weekdays[selected.day()]}`;
     return { title, total, data: dayRecords };
   }, [dayRecords, selectedDate]);
 
@@ -189,9 +201,7 @@ export default function CalendarScreen() {
         </Pressable>
 
         <Pressable onPress={() => setIsMonthPickerVisible(true)} style={styles.monthSelector}>
-          <Text style={[styles.monthText, { color: theme.text }]}>
-            {currentMonth.split('-')[0]}年{parseInt(currentMonth.split('-')[1])}月
-          </Text>
+          <Text style={[styles.monthText, { color: theme.text }]}>{monthDisplay}</Text>
           <ChevronDown size={14} color={theme.text} />
         </Pressable>
 

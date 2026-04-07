@@ -3,35 +3,31 @@
  * 所有日期操作都应使用此模块，确保时区处理一致
  */
 
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
+
 /**
  * 将 Date 对象转换为 ISO 日期字符串 (YYYY-MM-DD)
  * 支持本地时区，不受时区偏差影响
  */
 export const formatDateToISO = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return dayjs(date).format('YYYY-MM-DD');
 };
 
 /**
  * 将 Date 对象转换为 ISO 日期时间字符串 (YYYY-MM-DD HH:MM:SS)
  */
 export const formatDateTimeToISO = (date: Date): string => {
-  const dateStr = formatDateToISO(date);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  return `${dateStr} ${hours}:${minutes}:${seconds}`;
+  return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
 };
 
 /**
  * 将 Date 对象转换为年月字符串 (YYYY-MM)
  */
 export const formatDateToYearMonth = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
+  return dayjs(date).format('YYYY-MM');
 };
 
 /**
@@ -39,26 +35,13 @@ export const formatDateToYearMonth = (date: Date): string => {
  * @param dateStr ISO 日期字符串 (YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS)
  */
 export const parseISODate = (dateStr: string): Date | null => {
-  try {
-    const [datePart, timePart] = dateStr.split(' ');
-    const [year, month, day] = datePart.split('-').map(Number);
+  const withTime = dayjs(dateStr, 'YYYY-MM-DD HH:mm:ss', true);
+  if (withTime.isValid()) return withTime.toDate();
 
-    if (!year || !month || !day) return null;
+  const onlyDate = dayjs(dateStr, 'YYYY-MM-DD', true);
+  if (onlyDate.isValid()) return onlyDate.toDate();
 
-    const date = new Date();
-    date.setFullYear(year, month - 1, day);
-
-    if (timePart) {
-      const [hours, minutes, seconds] = timePart.split(':').map(Number);
-      date.setHours(hours || 0, minutes || 0, seconds || 0, 0);
-    } else {
-      date.setHours(0, 0, 0, 0);
-    }
-
-    return isNaN(date.getTime()) ? null : date;
-  } catch {
-    return null;
-  }
+  return null;
 };
 
 /**
@@ -80,46 +63,37 @@ export const getCurrentYearMonth = (): string => {
  * month 是 1-12 的数字，而不是 0-11
  */
 export const getDateComponents = (date: Date): [number, number, number] => {
-  return [date.getFullYear(), date.getMonth() + 1, date.getDate()];
+  const d = dayjs(date);
+  return [d.year(), d.month() + 1, d.date()];
 };
 
 /**
  * 解析 YYYY-MM 字符串为 [year, month]
  */
 export const parseYearMonth = (yearMonth: string): [number, number] | null => {
-  try {
-    const [yearStr, monthStr] = yearMonth.split('-');
-    const year = parseInt(yearStr);
-    const month = parseInt(monthStr);
+  const parsed = dayjs(yearMonth, 'YYYY-MM', true);
+  if (!parsed.isValid()) return null;
 
-    if (year < 1900 || year > 2100 || month < 1 || month > 12) {
-      return null;
-    }
+  const year = parsed.year();
+  const month = parsed.month() + 1;
+  if (year < 1900 || year > 2100 || month < 1 || month > 12) return null;
 
-    return [year, month];
-  } catch {
-    return null;
-  }
+  return [year, month];
 };
 
 /**
  * 解析 YYYY-MM-DD 字符串为 [year, month, day]
  */
 export const parseDate = (dateStr: string): [number, number, number] | null => {
-  try {
-    const [yearStr, monthStr, dayStr] = dateStr.split('-');
-    const year = parseInt(yearStr);
-    const month = parseInt(monthStr);
-    const day = parseInt(dayStr);
+  const parsed = dayjs(dateStr, 'YYYY-MM-DD', true);
+  if (!parsed.isValid()) return null;
 
-    if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
-      return null;
-    }
+  const year = parsed.year();
+  const month = parsed.month() + 1;
+  const day = parsed.date();
+  if (year < 1900 || year > 2100) return null;
 
-    return [year, month, day];
-  } catch {
-    return null;
-  }
+  return [year, month, day];
 };
 
 /**
@@ -129,27 +103,22 @@ export const parseDate = (dateStr: string): [number, number, number] | null => {
  * @returns 天数（date2 - date1）
  */
 export const daysDifference = (date1: Date, date2: Date): number => {
-  const time1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate()).getTime();
-  const time2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate()).getTime();
-  return Math.floor((time2 - time1) / (1000 * 60 * 60 * 24));
+  return dayjs(date2).startOf('day').diff(dayjs(date1).startOf('day'), 'day');
 };
 
 /**
  * 获取某个月的最后一天
  */
 export const getLastDayOfMonth = (year: number, month: number): number => {
-  const date = new Date(year, month, 0);
-  return date.getDate();
+  return dayjs(`${year}-${String(month).padStart(2, '0')}-01`, 'YYYY-MM-DD', true).daysInMonth();
 };
 
 /**
  * 获取某个月的第一天和最后一天 (ISO 日期格式)
  */
 export const getMonthRange = (year: number, month: number): [string, string] => {
-  const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
-  const lastDay = getLastDayOfMonth(year, month);
-  const lastDayStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-  return [firstDay, lastDayStr];
+  const monthStart = dayjs(`${year}-${String(month).padStart(2, '0')}-01`, 'YYYY-MM-DD', true);
+  return [monthStart.format('YYYY-MM-DD'), monthStart.endOf('month').format('YYYY-MM-DD')];
 };
 
 /**
@@ -196,7 +165,7 @@ export const getYearMonthFromDate = (dateStr: string): string | null => {
  * 比较两个日期是否相同（只比较年月日）
  */
 export const isSameDay = (date1: Date, date2: Date): boolean => {
-  return date1.getFullYear() === date2.getFullYear() && date1.getMonth() === date2.getMonth() && date1.getDate() === date2.getDate();
+  return dayjs(date1).isSame(dayjs(date2), 'day');
 };
 
 /**
@@ -211,44 +180,33 @@ export const isDateInRange = (date: string, startDate: string, endDate: string):
  * @param days 天数
  */
 export const getRecentDateRange = (days: number): [string, string] => {
-  const endDate = new Date();
-  const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
-
-  return [formatDateToISO(startDate), formatDateToISO(endDate)];
+  const endDate = dayjs();
+  const startDate = endDate.subtract(days, 'day');
+  return [startDate.format('YYYY-MM-DD'), endDate.format('YYYY-MM-DD')];
 };
 
 /**
  * 获取本月的日期范围
  */
 export const getThisMonthRange = (): [string, string] => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  return getMonthRange(year, month);
+  const today = dayjs();
+  return [today.startOf('month').format('YYYY-MM-DD'), today.endOf('month').format('YYYY-MM-DD')];
 };
 
 /**
  * 获取上个月的日期范围
  */
 export const getLastMonthRange = (): [string, string] => {
-  const today = new Date();
-  let year = today.getFullYear();
-  let month = today.getMonth(); // 已经是 0-11
-
-  if (month === 0) {
-    year -= 1;
-    month = 12;
-  }
-
-  return getMonthRange(year, month);
+  const lastMonth = dayjs().subtract(1, 'month');
+  return [lastMonth.startOf('month').format('YYYY-MM-DD'), lastMonth.endOf('month').format('YYYY-MM-DD')];
 };
 
 /**
  * 获取本年的日期范围
  */
 export const getThisYearRange = (): [string, string] => {
-  const year = new Date().getFullYear();
-  return [`${year}-01-01`, `${year}-12-31`];
+  const now = dayjs();
+  return [now.startOf('year').format('YYYY-MM-DD'), now.endOf('year').format('YYYY-MM-DD')];
 };
 
 /**
