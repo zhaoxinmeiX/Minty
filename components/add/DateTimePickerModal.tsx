@@ -29,6 +29,18 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
     return `${year}-${month}-${day}`;
   };
 
+  const parseYearMonthToLocalDate = (yearMonth: string) => {
+    const [yearStr, monthStr] = yearMonth.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      return new Date();
+    }
+
+    return new Date(year, month - 1, 1);
+  };
+
   const [currentMonth, setCurrentMonth] = React.useState(getLocalDateString(tempDate).slice(0, 7));
   const [showTimePicker, setShowTimePicker] = React.useState(false);
   const [showMonthYearPicker, setShowMonthYearPicker] = React.useState(false);
@@ -188,7 +200,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
                     <Pressable
                       style={styles.navBtn}
                       onPress={() => {
-                        const d = new Date(currentMonth + '-01');
+                        const d = parseYearMonthToLocalDate(currentMonth);
                         d.setMonth(d.getMonth() - 1);
                         setCurrentMonth(getLocalDateString(d).slice(0, 7));
                         setCalendarKey(Date.now());
@@ -199,7 +211,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
                     <Pressable
                       style={styles.navBtn}
                       onPress={() => {
-                        const d = new Date(currentMonth + '-01');
+                        const d = parseYearMonthToLocalDate(currentMonth);
                         d.setMonth(d.getMonth() + 1);
                         setCurrentMonth(getLocalDateString(d).slice(0, 7));
                         setCalendarKey(Date.now());

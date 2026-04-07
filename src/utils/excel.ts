@@ -1,3 +1,4 @@
+import { parseISODate } from '@/src/utils/date';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -17,7 +18,7 @@ export const exportLedgerToExcel = async (db: SQLiteDatabase, ledgerId: number, 
 
     // Format Data to match user's expected Chinese headers
     const data = records.map((r) => ({
-      时间: new Date(r.created_at).toLocaleString(),
+      时间: (parseISODate(r.created_at) ?? new Date(r.created_at)).toLocaleString(),
       类型: r.type === 'income' ? '收入' : '支出',
       分类: r.category,
       二级分类: r.sub_category || '',

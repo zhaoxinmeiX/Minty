@@ -14,6 +14,7 @@ import { EditingCategory, ModalType } from '@/src/types';
 import { useCategories } from '@/src/hooks/useCategories';
 import { useCategoryPopover } from '@/src/hooks/useCategoryPopover';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { parseISODate } from '@/src/utils/date';
 
 // Components
 import { AmountInput } from '@/components/add/AmountInput';
@@ -32,6 +33,12 @@ const PAGE_CARD = '#F3F4F6';
 const PAGE_TAB_ICON = '#6B7280';
 const PAGE_SECTION_DIVIDER = '#E9E9ED';
 const PAGE_ACCENT = '#FFB02E';
+const TAB_ROUTES = {
+  index: '/',
+  calendar: '/calendar',
+  stats: '/stats',
+  settings: '/settings',
+} as const;
 
 export default function AddScreen() {
   const db = useSQLiteContext();
@@ -99,7 +106,7 @@ export default function AddScreen() {
         setType(record.type);
         setAmount(record.amount.toString());
         setNote(record.note || '');
-        setDate(new Date(record.created_at));
+        setDate(parseISODate(record.created_at) ?? new Date());
       }
     }
   }, [id, db]);
@@ -205,7 +212,8 @@ export default function AddScreen() {
     setSelectedSubCategory(null);
 
     if (!stayOnPage) {
-      router.replace(`/(tabs)/${lastTab}` as any);
+      const targetRoute = TAB_ROUTES[lastTab as keyof typeof TAB_ROUTES] ?? TAB_ROUTES.index;
+      router.replace(targetRoute);
     }
   };
 

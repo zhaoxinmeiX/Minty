@@ -8,6 +8,7 @@ import { Colors } from '@/constants/Colors';
 import { addLedger, deleteLedger, getLedgers, updateLedger } from '@/src/db/operations';
 import { Ledger } from '@/src/db/schema';
 import { useStore } from '@/src/store';
+import { parseISODate } from '@/src/utils/date';
 import { exportLedgerToExcel, importExcelToLedger } from '@/src/utils/excel';
 
 export default function SettingsScreen() {
@@ -194,7 +195,7 @@ export default function SettingsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.ledgerName, { color: theme.text }]}>{item.name}</Text>
-                <Text style={styles.ledgerDate}>创建于 {new Date(item.created_at).toLocaleDateString()}</Text>
+                <Text style={styles.ledgerDate}>创建于 {(parseISODate(item.created_at) ?? new Date(item.created_at)).toLocaleDateString()}</Text>
               </View>
             </Pressable>
 

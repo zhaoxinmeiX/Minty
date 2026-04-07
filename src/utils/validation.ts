@@ -3,8 +3,10 @@
  * 所有用户输入和数据库操作前都应通过此层验证
  */
 
-import { Category, Ledger, RecordItem } from '@/src/db/schema';
 import { Alert } from 'react-native';
+
+import { Category, Ledger, RecordItem } from '@/src/db/schema';
+import { parseDate, parseISODate } from '@/src/utils/date';
 
 /**
  * 验证结果类型
@@ -14,6 +16,27 @@ export interface ValidationResult {
   errors: Record<string, string>;
   message?: string;
 }
+
+const parseDateInput = (value: string | Date): Date | null => {
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  // For date-only strings, parse as local date to avoid UTC shifting.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const parsed = parseDate(value);
+    if (!parsed) return null;
+
+    const [year, month, day] = parsed;
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+      return null;
+    }
+    return date;
+  }
+
+  return parseISODate(value) ?? null;
+};
 
 /**
  * 验证单个金额
@@ -99,8 +122,8 @@ export const validateRecord = (
     if (typeof data.created_at !== 'string') {
       errors.created_at = '日期格式无效';
     } else {
-      const date = new Date(data.created_at);
-      if (isNaN(date.getTime())) {
+      const date = parseDateInput(data.created_at);
+      if (!date) {
         errors.created_at = '日期格式无效';
       }
     }
@@ -209,18 +232,18 @@ export const validateLedger = (data: Partial<Omit<Ledger, 'id' | 'created_at'>>)
 export const validateDateRange = (startDate: string | Date, endDate: string | Date): ValidationResult => {
   const errors: Record<string, string> = {};
 
-  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
-  const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
+  const start = parseDateInput(startDate);
+  const end = parseDateInput(endDate);
 
-  if (isNaN(start.getTime())) {
+  if (!start) {
     errors.startDate = '开始日期无效';
   }
 
-  if (isNaN(end.getTime())) {
+  if (!end) {
     errors.endDate = '结束日期无效';
   }
 
-  if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start > end) {
+  if (start && end && start > end) {
     errors.dateRange = '开始日期不能晚于结束日期';
   }
 
@@ -267,8 +290,8 @@ export const validateDate = (date: string): ValidationResult => {
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     errors.date = '日期格式无效（应为 YYYY-MM-DD）';
   } else {
-    const parsedDate = new Date(date);
-    if (isNaN(parsedDate.getTime())) {
+    const parsedDate = parseDateInput(date);
+    if (!parsedDate) {
       errors.date = '日期无效';
     }
   }

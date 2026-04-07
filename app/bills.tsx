@@ -18,6 +18,7 @@ import { useLedgers } from '@/src/hooks/useLedgers';
 import { useStore } from '@/src/store';
 import { CategoryOption, RouteParams } from '@/src/types/bills';
 import { isValidDate } from '@/src/utils/billsFilters';
+import { parseISODate } from '@/src/utils/date';
 
 import { styles } from './bills.styles';
 
@@ -119,7 +120,8 @@ export default function BillsScreen() {
   const sections = useMemo(() => {
     const groups = new Map<string, { data: RecordItem[]; expenseTotal: number }>();
     records.forEach((item) => {
-      const date = new Date(item.created_at);
+      const date = parseISODate(item.created_at);
+      if (!date) return;
       const title = `${date.getFullYear()}年${date.getMonth() + 1}月`;
       if (!groups.has(title)) {
         groups.set(title, { data: [], expenseTotal: 0 });
@@ -147,6 +149,12 @@ export default function BillsScreen() {
     </View>
   );
 
+  const getDateKey = (record: RecordItem) => {
+    const date = parseISODate(record.created_at);
+    if (!date) return record.created_at.split(' ')[0] || record.created_at;
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -173,16 +181,23 @@ export default function BillsScreen() {
         renderSectionHeader={renderSectionHeader}
         contentContainerStyle={styles.listContent}
         stickySectionHeadersEnabled={false}
-        renderItem={({ item }) => (
-          <RecordListItem
-            item={item}
-            showTime
-            onPress={(record) => {
-              setSelectedRecord(record);
-              setIsDetailVisible(true);
-            }}
-          />
-        )}
+        renderItem={({ item, index, section }) => {
+          const prevItem = index > 0 ? section.data[index - 1] : null;
+          const showDateBadge = !prevItem || getDateKey(prevItem) !== getDateKey(item);
+
+          return (
+            <RecordListItem
+              item={item}
+              showTime
+              showDateBadge={showDateBadge}
+              reserveDateBadgeSpace
+              onPress={(record) => {
+                setSelectedRecord(record);
+                setIsDetailVisible(true);
+              }}
+            />
+          );
+        }}
         ListEmptyComponent={<Text style={styles.emptyText}>暂无符合条件的账单</Text>}
       />
 

@@ -3,7 +3,7 @@ import { RecordItem } from '@/src/db/schema';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 
-export function useRecords(ledgerId: number, yearMonth?: string) {
+export function useRecords(ledgerId: number, yearMonth?: string, startDate?: string, endDate?: string) {
   const db = useSQLiteContext();
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [totalExpense, setTotalExpense] = useState(0);
@@ -21,6 +21,27 @@ export function useRecords(ledgerId: number, yearMonth?: string) {
         } else {
           data = getRecordsByLedger(db, ledgerId);
         }
+      } else if (startDate || endDate) {
+        let query = `
+          SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+          FROM records r
+          LEFT JOIN categories c ON r.category_id = c.id
+          WHERE r.ledger_id = ?
+        `;
+        const params: (number | string)[] = [ledgerId];
+
+        if (startDate) {
+          query += ' AND date(r.created_at) >= ?';
+          params.push(startDate);
+        }
+
+        if (endDate) {
+          query += ' AND date(r.created_at) <= ?';
+          params.push(endDate);
+        }
+
+        query += ' ORDER BY r.created_at DESC';
+        data = db.getAllSync<RecordItem>(query, ...params);
       } else {
         data = getRecordsByLedger(db, ledgerId);
       }
@@ -38,7 +59,7 @@ export function useRecords(ledgerId: number, yearMonth?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [db, ledgerId, yearMonth]);
+  }, [db, ledgerId, yearMonth, startDate, endDate]);
 
   useEffect(() => {
     fetchRecords();

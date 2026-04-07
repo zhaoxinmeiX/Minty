@@ -13,6 +13,7 @@ import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
 import { useRecords } from '@/src/hooks/useRecords';
 import { useStore } from '@/src/store';
+import { formatDateToISO, parseISODate } from '@/src/utils/date';
 
 export default function RecordsScreen() {
   const db = useSQLiteContext();
@@ -20,7 +21,13 @@ export default function RecordsScreen() {
   const { activeLedgerId, setActiveLedgerId, setSelectedDateContext, setLastTab } = useStore();
   const theme = Colors.light;
 
-  const { records, totalExpense, totalIncome, fetchRecords, remove } = useRecords(activeLedgerId);
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 29);
+  const recentRangeStart = formatDateToISO(startDate);
+  const recentRangeEnd = formatDateToISO(today);
+
+  const { records, totalExpense, totalIncome, fetchRecords, remove } = useRecords(activeLedgerId, undefined, recentRangeStart, recentRangeEnd);
   const { ledgers } = useLedgers();
   const activeLedger = ledgers.find((l) => l.id === activeLedgerId);
 
@@ -44,7 +51,8 @@ export default function RecordsScreen() {
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
     records.forEach((r) => {
-      const d = new Date(r.created_at);
+      const d = parseISODate(r.created_at);
+      if (!d) return;
       const dateKey = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
       const weekday = weekdays[d.getDay()];
       const displayDate = dateKey === todayStr ? `今天 ${d.getMonth() + 1}月${d.getDate()}日 ${weekday}` : `${d.getMonth() + 1}月${d.getDate()}日 ${weekday}`;
@@ -126,7 +134,7 @@ export default function RecordsScreen() {
       {/* Monthly Spending Card */}
       <View style={[styles.summaryCard, { backgroundColor: '#FFD89B' }]}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardMonthText}>{new Date().getMonth() + 1}月 · 支出</Text>
+          <Text style={styles.cardMonthText}>近30天 · 支出</Text>
         </View>
 
         <Text style={styles.cardAmountDisplay}>{totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>

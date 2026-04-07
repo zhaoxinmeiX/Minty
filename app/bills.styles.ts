@@ -69,7 +69,7 @@ export const styles = StyleSheet.create({
   listContent: { paddingBottom: 40 },
   monthHeader: {
     marginHorizontal: 16,
-    marginTop: 14,
+    marginTop: 0,
     marginBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -11,6 +11,7 @@ import { deleteRecord, getRecordsForBillList } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
 import { useStore } from '@/src/store';
+import { parseISODate } from '@/src/utils/date';
 
 export default function SearchScreen() {
   const db = useSQLiteContext();
@@ -51,7 +52,8 @@ export default function SearchScreen() {
     const groups = new Map<string, { data: RecordItem[]; expenseTotal: number }>();
 
     records.forEach((item) => {
-      const date = new Date(item.created_at);
+      const date = parseISODate(item.created_at);
+      if (!date) return;
       const title = `${date.getFullYear()}年${date.getMonth() + 1}月`;
       if (!groups.has(title)) {
         groups.set(title, { data: [], expenseTotal: 0 });

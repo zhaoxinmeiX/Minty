@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { getIconComponent } from '@/src/constants/icons';
 import { RecordItem } from '@/src/db/schema';
+import { parseISODate } from '@/src/utils/date';
 import { Book, Copy, Edit, Trash2, X } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -88,7 +89,7 @@ export const RecordDetailSheet: React.FC<RecordDetailSheetProps> = ({ visible, r
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.tabIconDefault }]}>时间</Text>
               <Text style={[styles.detailValue, { color: theme.text }]}>
-                {new Date(record.created_at).toLocaleString('zh-CN', {
+                {(parseISODate(record.created_at) ?? new Date(record.created_at)).toLocaleString('zh-CN', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
