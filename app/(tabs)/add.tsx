@@ -262,7 +262,13 @@ export default function AddScreen() {
       <View style={styles.topSection}>
         {/* Custom Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerIcon}>
+          <Pressable
+            onPress={() => {
+              const targetRoute = TAB_ROUTES[lastTab as keyof typeof TAB_ROUTES] ?? TAB_ROUTES.index;
+              router.replace(targetRoute);
+            }}
+            style={styles.headerIcon}
+          >
             <ChevronLeft size={28} color={PAGE_TEXT} />
           </Pressable>
 

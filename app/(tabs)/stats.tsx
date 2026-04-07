@@ -142,6 +142,7 @@ export default function StatsScreen() {
             <StatsDonutChart
               size={statsState.donutMetrics.size}
               center={statsState.donutMetrics.center}
+              outerRadius={statsState.donutMetrics.outerRadius}
               innerRadius={statsState.donutMetrics.innerRadius}
               backgroundColor={theme.background}
               borderColor={theme.border}
