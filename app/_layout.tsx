@@ -33,29 +33,10 @@ const initDatabase = async (db: SQLiteDatabase) => {
     type: 'expense' | 'income';
     children?: Array<{ name: string; icon: string }>;
   }> = [
-    { name: '日常其他', icon: 'LayoutGrid', type: 'expense' },
-    { name: '装备', icon: 'Backpack', type: 'expense' },
     {
-      name: '出行',
-      icon: 'Plane',
+      name: '超市',
+      icon: 'ShoppingCart',
       type: 'expense',
-      children: [
-        { name: '公交/地铁', icon: 'Bus' },
-        { name: '打车', icon: 'Car' },
-      ],
-    },
-    { name: '学费', icon: 'GraduationCap', type: 'expense' },
-    { name: '签证', icon: 'FileCheck', type: 'expense' },
-    { name: '保险', icon: 'ShieldPlus', type: 'expense' },
-    {
-      name: '餐饮',
-      icon: 'Utensils',
-      type: 'expense',
-      children: [
-        { name: '早餐', icon: 'Coffee' },
-        { name: '午餐', icon: 'Utensils' },
-        { name: '晚餐', icon: 'Utensils' },
-      ],
     },
     {
       name: '车',
@@ -70,14 +51,32 @@ const initDatabase = async (db: SQLiteDatabase) => {
         { name: '违章罚款', icon: 'FileCheck' },
       ],
     },
+    { name: '餐饮', icon: 'Utensils', type: 'expense' },
+    { name: '日常其他', icon: 'LayoutGrid', type: 'expense' },
     {
-      name: '超市',
-      icon: 'ShoppingCart',
+      name: '租房',
+      icon: 'Home',
       type: 'expense',
-      children: [{ name: '日用品', icon: 'Home' }],
+      children: [
+        { name: 'Airbnb', icon: 'Home' },
+        { name: '房租', icon: 'Home' },
+        { name: '水电网', icon: 'Home' },
+        { name: '其他', icon: 'LayoutGrid' },
+      ],
     },
-    { name: '租房', icon: 'Home', type: 'expense' },
-    { name: '英语', icon: 'BookOpen', type: 'expense' },
+    {
+      name: '公共交通',
+      icon: 'Plane',
+      type: 'expense',
+      children: [
+        { name: '飞机', icon: 'Plane' },
+        { name: '高铁', icon: 'Train' },
+        { name: '公交/地铁', icon: 'Bus' },
+        { name: '打车', icon: 'Car' },
+      ],
+    },
+    { name: '宠物', icon: 'Heart', type: 'expense' },
+    { name: '学费签证等', icon: 'GraduationCap', type: 'expense' },
     { name: '工资', icon: 'DollarSign', type: 'income' },
     { name: '理财', icon: 'TrendingUp', type: 'income' },
     { name: '红包', icon: 'Gift', type: 'income' },

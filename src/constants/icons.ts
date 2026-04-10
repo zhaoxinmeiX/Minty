@@ -26,6 +26,7 @@ export const IconMap: Record<string, any> = {
   Brush: LucideIcons.Brush,
   Music: LucideIcons.Music,
   Bus: LucideIcons.Bus,
+  Train: LucideIcons.Train,
   Fuel: LucideIcons.Fuel,
   ParkingCircle: LucideIcons.ParkingCircle,
   Wrench: LucideIcons.Wrench,
