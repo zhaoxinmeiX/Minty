@@ -26,36 +26,103 @@ const initDatabase = async (db: SQLiteDatabase) => {
   // Ensure default ledger
   await db.runAsync('INSERT OR IGNORE INTO ledgers (id, name, currency) VALUES (1, "默认账本", "NZD");');
 
-  // Seed basic categories if table is empty
-  const cats = await db.getAllAsync('SELECT * FROM categories LIMIT 1');
-  if (cats.length === 0) {
-    // Parent Expense
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("日常其他", "LayoutGrid", "expense", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("装备", "Backpack", "expense", NULL);');
-    const resTravel = await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("出行", "Plane", "expense", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("学费", "GraduationCap", "expense", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("签证", "FileCheck", "expense", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("保险", "ShieldPlus", "expense", NULL);');
-    const resFood = await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("餐饮", "Utensils", "expense", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("车", "Car", "expense", NULL);');
-    const resSuper = await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("超市", "ShoppingCart", "expense", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("租房", "Home", "expense", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("英语", "BookOpen", "expense", NULL);');
+  // Idempotent seed for all default categories: works for both new and existing databases.
+  const defaultCategories: Array<{
+    name: string;
+    icon: string;
+    type: 'expense' | 'income';
+    children?: Array<{ name: string; icon: string }>;
+  }> = [
+    { name: '日常其他', icon: 'LayoutGrid', type: 'expense' },
+    { name: '装备', icon: 'Backpack', type: 'expense' },
+    {
+      name: '出行',
+      icon: 'Plane',
+      type: 'expense',
+      children: [
+        { name: '公交/地铁', icon: 'Bus' },
+        { name: '打车', icon: 'Car' },
+      ],
+    },
+    { name: '学费', icon: 'GraduationCap', type: 'expense' },
+    { name: '签证', icon: 'FileCheck', type: 'expense' },
+    { name: '保险', icon: 'ShieldPlus', type: 'expense' },
+    {
+      name: '餐饮',
+      icon: 'Utensils',
+      type: 'expense',
+      children: [
+        { name: '早餐', icon: 'Coffee' },
+        { name: '午餐', icon: 'Utensils' },
+        { name: '晚餐', icon: 'Utensils' },
+      ],
+    },
+    {
+      name: '车',
+      icon: 'Car',
+      type: 'expense',
+      children: [
+        { name: '加油', icon: 'Fuel' },
+        { name: '停车费', icon: 'ParkingCircle' },
+        { name: '维修保养', icon: 'Wrench' },
+        { name: '汽车用品', icon: 'Package' },
+        { name: '保险年检', icon: 'ShieldPlus' },
+        { name: '违章罚款', icon: 'FileCheck' },
+      ],
+    },
+    {
+      name: '超市',
+      icon: 'ShoppingCart',
+      type: 'expense',
+      children: [{ name: '日用品', icon: 'Home' }],
+    },
+    { name: '租房', icon: 'Home', type: 'expense' },
+    { name: '英语', icon: 'BookOpen', type: 'expense' },
+    { name: '工资', icon: 'DollarSign', type: 'income' },
+    { name: '理财', icon: 'TrendingUp', type: 'income' },
+    { name: '红包', icon: 'Gift', type: 'income' },
+    { name: '报销', icon: 'Receipt', type: 'income' },
+    { name: '其他收入', icon: 'PlusCircle', type: 'income' },
+  ];
 
-    // Parent Income
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("工资", "DollarSign", "income", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("理财", "TrendingUp", "income", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("红包", "Gift", "income", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("报销", "Receipt", "income", NULL);');
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("其他收入", "PlusCircle", "income", NULL);');
+  for (const category of defaultCategories) {
+    await db.runAsync(
+      `INSERT INTO categories (name, icon, type, parent_id)
+       SELECT ?, ?, ?, NULL
+       WHERE NOT EXISTS (
+         SELECT 1 FROM categories WHERE name = ? AND type = ? AND parent_id IS NULL
+       );`,
+      category.name,
+      category.icon,
+      category.type,
+      category.name,
+      category.type,
+    );
 
-    // Sub Expense
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("早餐", "Coffee", "expense", ?);', resFood.lastInsertRowId);
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("午餐", "Utensils", "expense", ?);', resFood.lastInsertRowId);
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("晚餐", "Utensils", "expense", ?);', resFood.lastInsertRowId);
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("公交/地铁", "Bus", "expense", ?);', resTravel.lastInsertRowId);
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("打车", "Car", "expense", ?);', resTravel.lastInsertRowId);
-    await db.runAsync('INSERT INTO categories (name, icon, type, parent_id) VALUES ("日用品", "Home", "expense", ?);', resSuper.lastInsertRowId);
+    if (!category.children || category.children.length === 0) continue;
+
+    const parent = (await db.getFirstAsync('SELECT id FROM categories WHERE name = ? AND type = ? AND parent_id IS NULL LIMIT 1;', category.name, category.type)) as {
+      id: number;
+    } | null;
+
+    if (!parent?.id) continue;
+
+    for (const child of category.children) {
+      await db.runAsync(
+        `INSERT INTO categories (name, icon, type, parent_id)
+         SELECT ?, ?, ?, ?
+         WHERE NOT EXISTS (
+           SELECT 1 FROM categories WHERE name = ? AND type = ? AND parent_id = ?
+         );`,
+        child.name,
+        child.icon,
+        category.type,
+        parent.id,
+        child.name,
+        category.type,
+        parent.id,
+      );
+    }
   }
 };
 

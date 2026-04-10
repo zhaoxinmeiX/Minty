@@ -26,7 +26,7 @@ export function useCategoryPopover() {
       const arrowX = targetCenterX - popLeft - 10;
 
       setPosition({
-        top: y + h + 10,
+        top: y + h + 20,
         left: popLeft,
         arrowLeft: arrowX,
       });

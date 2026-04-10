@@ -34,11 +34,6 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, selected
           <View style={[styles.iconWrapper, isSelected && { backgroundColor: '#FFF4E5', borderRadius: 20 }]}>
             <View style={styles.iconContainer}>
               <Icon size={24} color={isSelected ? '#FF9500' : theme.text} />
-              <View style={styles.badgeContainer}>
-                <View style={[styles.badge, { backgroundColor: theme.tabIconDefault + '40' }]}>
-                  <Text style={styles.badgeText}>•••</Text>
-                </View>
-              </View>
             </View>
           </View>
           <Text numberOfLines={1} style={[styles.catLabel, { color: isSelected ? '#FF9500' : theme.text }, isSelected && { fontWeight: '700' }]}>
@@ -77,20 +72,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 0,
     textAlign: 'center',
-  },
-  badgeContainer: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-  },
-  badge: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 7,
-    color: '#FFF',
-    fontWeight: 'bold',
   },
 });
