@@ -2,6 +2,7 @@ import { ArrowLeft, CircleX } from 'lucide-react-native';
 import React from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
+import { Colors } from '@/constants/Colors';
 import { CategoryOption } from '@/src/types/bills';
 
 import { styles } from './BillFilterModal.styles';
@@ -14,15 +15,17 @@ type Props = {
 };
 
 export function BillFilterCategoryPicker({ categoryOptions, onSelectCategory, onCloseCategoryPicker, onClose }: Props) {
+  const theme = Colors.light;
+
   return (
     <>
       <View style={styles.filterHeader}>
         <Pressable style={styles.categoryBackBtn} onPress={onCloseCategoryPicker} hitSlop={8}>
-          <ArrowLeft size={20} color="#6B7280" />
+          <ArrowLeft size={20} color={theme.homeMuted} />
         </Pressable>
         <Text style={styles.filterMainTitle}>选择分类</Text>
         <Pressable onPress={onClose} hitSlop={8}>
-          <CircleX size={22} color="#9CA3AF" />
+          <CircleX size={22} color={theme.homeMuted} />
         </Pressable>
       </View>
 

@@ -1,73 +1,88 @@
-import { deleteRecord, getRecordsByLedger, getRecordsByLedgerAndMonth } from '@/src/db/operations';
-import { RecordItem } from '@/src/db/schema';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
-export function useRecords(ledgerId: number, yearMonth?: string, startDate?: string, endDate?: string) {
+import { deleteRecord, getRecordsByLedgerAndMonthAsync, getRecordsByLedgerAsync, getRecordsByLedgerInRangeAsync } from '@/src/db/operations';
+import { RecordItem } from '@/src/db/schema';
+import { useStore } from '@/src/store';
+
+export function useRecords(
+  ledgerId: number,
+  yearMonth?: string,
+  startDate?: string,
+  endDate?: string,
+  includeTotals = true,
+  autoFetch = true,
+) {
   const db = useSQLiteContext();
+  const bumpDataVersion = useStore((state) => state.bumpDataVersion);
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [totalExpense, setTotalExpense] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const requestIdRef = useRef(0);
 
-  const fetchRecords = useCallback(() => {
+  const fetchRecords = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
+
     try {
       let data: RecordItem[] = [];
+
       if (yearMonth) {
         const parts = yearMonth.split('-');
         if (parts.length === 2) {
-          data = getRecordsByLedgerAndMonth(db, ledgerId, parts[0], parts[1]);
+          data = await getRecordsByLedgerAndMonthAsync(db, ledgerId, parts[0], parts[1]);
         } else {
-          data = getRecordsByLedger(db, ledgerId);
+          data = await getRecordsByLedgerAsync(db, ledgerId);
         }
       } else if (startDate || endDate) {
-        let query = `
-          SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
-          FROM records r
-          LEFT JOIN categories c ON r.category_id = c.id
-          WHERE r.ledger_id = ?
-        `;
-        const params: (number | string)[] = [ledgerId];
-
-        if (startDate) {
-          query += ' AND date(r.created_at) >= ?';
-          params.push(startDate);
-        }
-
-        if (endDate) {
-          query += ' AND date(r.created_at) <= ?';
-          params.push(endDate);
-        }
-
-        query += ' ORDER BY r.created_at DESC';
-        data = db.getAllSync<RecordItem>(query, ...params);
+        data = await getRecordsByLedgerInRangeAsync(db, ledgerId, startDate, endDate);
       } else {
-        data = getRecordsByLedger(db, ledgerId);
+        data = await getRecordsByLedgerAsync(db, ledgerId);
       }
 
-      setRecords(data);
+      if (requestId !== requestIdRef.current) return;
 
-      let exp = 0;
-      let inc = 0;
-      data.forEach((r) => {
-        if (r.type === 'expense') exp += r.amount;
-        else if (r.type === 'income') inc += r.amount;
+      startTransition(() => {
+        setRecords(data);
+
+        if (!includeTotals) {
+          setTotalExpense(0);
+          setTotalIncome(0);
+          return;
+        }
+
+        let exp = 0;
+        let inc = 0;
+        data.forEach((r) => {
+          if (r.type === 'expense') exp += r.amount;
+          else if (r.type === 'income') inc += r.amount;
+        });
+
+        setTotalExpense(exp);
+        setTotalIncome(inc);
       });
-      setTotalExpense(exp);
-      setTotalIncome(inc);
+
+      return data;
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [db, ledgerId, yearMonth, startDate, endDate]);
+  }, [db, ledgerId, yearMonth, startDate, endDate, includeTotals]);
 
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+    if (!autoFetch) {
+      return;
+    }
+
+    void fetchRecords();
+  }, [autoFetch, fetchRecords]);
 
   const remove = (id: number) => {
     deleteRecord(db, id);
-    fetchRecords();
+    bumpDataVersion();
+    void fetchRecords();
   };
 
   return {

@@ -2,6 +2,7 @@ import { ChevronRight, CircleX } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
+import { Colors } from '@/constants/Colors';
 import { BillListType } from '@/src/db/operations';
 
 import { styles } from './BillFilterModal.styles';
@@ -47,6 +48,8 @@ export function BillFilterForm({
   onReset,
   onApply,
 }: Props) {
+  const theme = Colors.light;
+
   return (
     <>
       <View style={styles.filterHeader}>
@@ -55,16 +58,16 @@ export function BillFilterForm({
           <Text style={styles.filterHeaderHint}>组合条件，快速定位账单</Text>
         </View>
         <Pressable onPress={onClose} hitSlop={8}>
-          <CircleX size={22} color="#9CA3AF" />
+          <CircleX size={22} color={theme.homeMuted} />
         </Pressable>
       </View>
 
       <View style={styles.filterCardBlock}>
         <Text style={styles.filterTitle}>账单时间</Text>
         <View style={styles.rangeRow}>
-          <TextInput value={startDateInput} onChangeText={onStartDateChange} placeholder="开始日期" placeholderTextColor="#B1B1B8" style={styles.rangeInput} />
+          <TextInput value={startDateInput} onChangeText={onStartDateChange} placeholder="开始日期" placeholderTextColor={theme.homeMuted} style={styles.rangeInput} />
           <Text style={styles.rangeDivider}>~</Text>
-          <TextInput value={endDateInput} onChangeText={onEndDateChange} placeholder="结束日期" placeholderTextColor="#B1B1B8" style={styles.rangeInput} />
+          <TextInput value={endDateInput} onChangeText={onEndDateChange} placeholder="结束日期" placeholderTextColor={theme.homeMuted} style={styles.rangeInput} />
         </View>
         <Text style={styles.helperText}>日期格式：YYYY-MM-DD</Text>
       </View>
@@ -91,7 +94,7 @@ export function BillFilterForm({
             onChangeText={onMinAmountChange}
             keyboardType="numeric"
             placeholder="最小金额"
-            placeholderTextColor="#B1B1B8"
+            placeholderTextColor={theme.homeMuted}
             style={styles.rangeInput}
           />
           <Text style={styles.rangeDivider}>~</Text>
@@ -100,7 +103,7 @@ export function BillFilterForm({
             onChangeText={onMaxAmountChange}
             keyboardType="numeric"
             placeholder="最大金额"
-            placeholderTextColor="#B1B1B8"
+            placeholderTextColor={theme.homeMuted}
             style={styles.rangeInput}
           />
         </View>
@@ -110,7 +113,7 @@ export function BillFilterForm({
         <Text style={styles.filterTitle}>分类</Text>
         <View style={styles.filterRowRight}>
           <Text style={styles.filterValue}>{selectedCategoryName || '不限制'}</Text>
-          <ChevronRight size={18} color="#9CA3AF" />
+          <ChevronRight size={18} color={theme.homeMuted} />
         </View>
       </Pressable>
 

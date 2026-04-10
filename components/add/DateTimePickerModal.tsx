@@ -20,7 +20,7 @@ interface DateTimePickerModalProps {
 
 export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visible, tempDate, onDateChange, onConfirm, onCancel }) => {
   const theme = Colors.light;
-  const accentColor = '#F59E0B'; // Orange from reference
+  const accentColor = theme.homeAccent;
   const { width, height } = useWindowDimensions();
 
   const getLocalDateString = (date: Date) => {

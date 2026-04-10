@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteDatabase, SQLiteProvider } from 'expo-sqlite';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -150,11 +151,13 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </SQLiteProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      </SQLiteProvider>
+    </SafeAreaProvider>
   );
 }

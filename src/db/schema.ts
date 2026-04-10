@@ -67,4 +67,9 @@ CREATE TABLE IF NOT EXISTS records (
   FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE,
   FOREIGN KEY (sub_category_id) REFERENCES categories (id) ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_records_ledger_created_at ON records (ledger_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_records_ledger_type_created_at ON records (ledger_id, type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_records_ledger_category_created_at ON records (ledger_id, category_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_categories_type_parent_id ON categories (type, parent_id);
 `;

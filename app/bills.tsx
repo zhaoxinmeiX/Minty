@@ -1,20 +1,22 @@
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, SectionList, Text, useWindowDimensions, View } from 'react-native';
+import { SectionList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LedgerPickerModal } from '@/components/add/LedgerPickerModal';
+import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { BillFilterModal } from '@/components/bills/BillFilterModal';
 import { BillsTopBar } from '@/components/bills/BillsTopBar';
 import { MonthPickerModal } from '@/components/calendar/MonthPickerModal';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { RecordListItem } from '@/components/record/RecordListItem';
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { BillListType, deleteRecord, getBillListCategoryOptions, getRecordsForBillList } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useBillFilters } from '@/src/hooks/useBillFilters';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { CategoryOption, RouteParams } from '@/src/types/bills';
 import { isValidDate } from '@/src/utils/billsFilters';
@@ -29,7 +31,10 @@ export default function BillsScreen() {
   const theme = Colors.light;
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { activeLedgerId, setActiveLedgerId } = useStore();
+  const stableInsets = useStableSafeAreaInsets();
+  const activeLedgerId = useStore((state) => state.activeLedgerId);
+  const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
+  const bumpDataVersion = useStore((state) => state.bumpDataVersion);
   const { ledgers } = useLedgers();
   const activeLedger = ledgers.find((item) => item.id === activeLedgerId);
 
@@ -43,6 +48,8 @@ export default function BillsScreen() {
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   const [isLedgerModalVisible, setIsLedgerModalVisible] = useState(false);
   const [isMonthPickerVisible, setIsMonthPickerVisible] = useState(false);
+  const [ledgerAnchorFrame, setLedgerAnchorFrame] = useState<LedgerPickerAnchorFrame | null>(null);
+  const ledgerButtonRef = React.useRef<View>(null);
 
   const [searchOpen, setSearchOpen] = useState(params.openSearch === '1');
   const [keyword, setKeyword] = useState('');
@@ -142,10 +149,23 @@ export default function BillsScreen() {
 
   const appliedCategory = useMemo(() => categoryOptions.find((item) => item.category_id === filters.categoryId), [categoryOptions, filters.categoryId]);
 
+  const openLedgerPicker = () => {
+    if (!ledgerButtonRef.current) {
+      setLedgerAnchorFrame(null);
+      setIsLedgerModalVisible(true);
+      return;
+    }
+
+    ledgerButtonRef.current.measureInWindow((x, y, width, height) => {
+      setLedgerAnchorFrame({ x, y, width, height });
+      setIsLedgerModalVisible(true);
+    });
+  };
+
   const renderSectionHeader = ({ section }: { section: { title: string; expenseTotal: number } }) => (
     <View style={styles.monthHeader}>
       <Text style={styles.monthTitle}>{section.title}</Text>
-      <Text style={[styles.monthTotal, { color: theme.tabIconDefault }]}>支 {section.expenseTotal.toFixed(2)}</Text>
+      <Text style={[styles.monthTotal, { color: theme.homeOlive }]}>支 {section.expenseTotal.toFixed(2)}</Text>
     </View>
   );
 
@@ -156,13 +176,16 @@ export default function BillsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: stableInsets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
+      <View pointerEvents="none" style={[localStyles.screenGlow, localStyles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.42)' }]} />
+      <View pointerEvents="none" style={[localStyles.screenGlow, localStyles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.34)' }]} />
 
       <BillsTopBar
         searchOpen={searchOpen}
         keyword={keyword}
         ledgerName={activeLedger?.name || '家庭账本'}
+        ledgerTriggerRef={ledgerButtonRef}
         monthLabel={monthLabel}
         showFilters={showFilters}
         onBack={() => router.back()}
@@ -170,7 +193,7 @@ export default function BillsScreen() {
         onClearKeyword={() => setKeyword('')}
         onCloseSearch={() => setSearchOpen(false)}
         onOpenSearch={() => setSearchOpen(true)}
-        onOpenLedgerPicker={() => setIsLedgerModalVisible(true)}
+        onOpenLedgerPicker={openLedgerPicker}
         onOpenMonthPicker={() => setIsMonthPickerVisible(true)}
         onToggleFilters={handleToggleFilters}
       />
@@ -181,6 +204,7 @@ export default function BillsScreen() {
         renderSectionHeader={renderSectionHeader}
         contentContainerStyle={styles.listContent}
         stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item, index, section }) => {
           const prevItem = index > 0 ? section.data[index - 1] : null;
           const showDateBadge = !prevItem || getDateKey(prevItem) !== getDateKey(item);
@@ -198,7 +222,12 @@ export default function BillsScreen() {
             />
           );
         }}
-        ListEmptyComponent={<Text style={styles.emptyText}>暂无符合条件的账单</Text>}
+        ListEmptyComponent={
+          <View style={[localStyles.emptyCard, { backgroundColor: theme.homeSurface }]}>
+            <Text style={[localStyles.emptyTitle, { color: theme.text }]}>暂无符合条件的账单</Text>
+            <Text style={[localStyles.emptyHint, { color: theme.homeMuted }]}>试试调整筛选条件或搜索关键词。</Text>
+          </View>
+        }
       />
 
       <BillFilterModal
@@ -235,7 +264,7 @@ export default function BillsScreen() {
           setIsMonthPickerVisible(false);
         }}
         onClose={() => setIsMonthPickerVisible(false)}
-        accentColor={theme.accent}
+        accentColor={theme.homeAccent}
       />
 
       <RecordDetailSheet
@@ -245,14 +274,15 @@ export default function BillsScreen() {
         onClose={() => setIsDetailVisible(false)}
         onEdit={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/(tabs)/add', params: { id: record.id.toString(), mode: 'edit' } });
+          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } });
         }}
         onCopy={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/(tabs)/add', params: { id: record.id.toString(), mode: 'copy' } });
+          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } });
         }}
         onDelete={(id) => {
           deleteRecord(db, id);
+          bumpDataVersion();
           setIsDetailVisible(false);
           fetchRecords();
         }}
@@ -262,6 +292,7 @@ export default function BillsScreen() {
         visible={isLedgerModalVisible}
         ledgers={ledgers}
         activeLedgerId={activeLedgerId}
+        anchorFrame={ledgerAnchorFrame}
         onSelect={(id) => {
           setActiveLedgerId(id);
           setIsLedgerModalVisible(false);
@@ -274,6 +305,41 @@ export default function BillsScreen() {
           <Text style={styles.appliedHintText}>已筛选分类：{appliedCategory.category}</Text>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  screenGlow: {
+    position: 'absolute',
+    borderRadius: 999,
+  },
+  screenGlowTop: {
+    width: 200,
+    height: 200,
+    top: 54,
+    left: -48,
+  },
+  screenGlowBottom: {
+    width: 240,
+    height: 240,
+    bottom: 120,
+    right: -84,
+  },
+  emptyCard: {
+    marginHorizontal: 16,
+    marginTop: 28,
+    borderRadius: 28,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: Typography.size.title,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  emptyHint: {
+    fontSize: Typography.size.body,
+  },
+});

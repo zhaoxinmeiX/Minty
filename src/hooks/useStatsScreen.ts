@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { SQLiteDatabase } from 'expo-sqlite';
+import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
 import { Dimensions } from 'react-native';
 
-import { getCategoryStats } from '@/src/db/operations';
+import { getCategoryStatsAsync } from '@/src/db/operations';
 import { formatDateToISO } from '@/src/utils/date';
 
 const { width } = Dimensions.get('window');
@@ -40,7 +41,7 @@ export type SegmentGeometry = {
   textAnchor: 'start' | 'end';
 };
 
-const CHART_COLORS = ['#D8A7A1', '#AFC1A8', '#D6C7A1', '#A9B6C6', '#C7A7C8'];
+const CHART_COLORS = ['#F98C58', '#8DB07B', '#ABD7FB', '#F7C48C', '#C9D99A'];
 
 const polarToCartesian = (cx: number, cy: number, r: number, angleDeg: number) => {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -135,18 +136,24 @@ const getDateRange = (range: TimeRange, currentDate: Date) => {
   };
 };
 
-export function useStatsScreen(db: Parameters<typeof getCategoryStats>[0], ledgerId: number) {
+export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
   const [range, setRange] = useState<TimeRange>('month');
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [stats, setStats] = useState<CategoryStat[]>([]);
+  const requestIdRef = useRef(0);
 
   const buildDateRange = useCallback(() => getDateRange(range, currentDate), [currentDate, range]);
 
-  const fetchStats = useCallback(() => {
+  const fetchStats = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     const { startDate, endDate } = getDateRange(range, currentDate);
-    const data = getCategoryStats(db, ledgerId, type, startDate, endDate);
-    setStats(data);
+    const data = await getCategoryStatsAsync(db, ledgerId, type, startDate, endDate);
+    if (requestId !== requestIdRef.current) return;
+
+    startTransition(() => {
+      setStats(data);
+    });
   }, [currentDate, db, ledgerId, range, type]);
 
   const totalAmount = useMemo(() => stats.reduce((acc, curr) => acc + curr.totalAmount, 0), [stats]);

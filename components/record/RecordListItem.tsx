@@ -14,7 +14,13 @@ interface RecordListItemProps {
   reserveDateBadgeSpace?: boolean;
 }
 
-export function RecordListItem({ item, onPress, showTime = false, showDateBadge = false, reserveDateBadgeSpace = false }: RecordListItemProps) {
+export function RecordListItem({
+  item,
+  onPress,
+  showTime = false,
+  showDateBadge = false,
+  reserveDateBadgeSpace = false,
+}: RecordListItemProps) {
   const theme = Colors.light;
   const [datePart, timePart] = item.created_at.split(' ');
   const time = timePart?.slice(0, 5) || '';
@@ -23,22 +29,43 @@ export function RecordListItem({ item, onPress, showTime = false, showDateBadge 
   const monthText = parsedDate ? `${parsedDate[1]}月` : '';
   const showMeta = showTime || !!item.note;
   const Icon = getIconComponent(item.icon);
+  const isExpense = item.type === 'expense';
+  const iconBackgroundColor = isExpense ? '#FCE8DB' : '#E5F2E6';
+  const iconColor = isExpense ? theme.homeAccent : theme.income;
+  const amountBackgroundColor = isExpense ? '#FFF0E7' : '#EDF7EE';
+  const amountColor = isExpense ? theme.expense : theme.income;
 
   return (
-    <Pressable style={[styles.recordItem, { backgroundColor: theme.card }]} onPress={() => onPress(item)}>
+    <Pressable
+      style={[
+        styles.recordItem,
+        {
+          backgroundColor: theme.homeSurface,
+          borderColor: 'rgba(110, 125, 66, 0.08)',
+        },
+      ]}
+      onPress={() => onPress(item)}
+    >
       {(showDateBadge || reserveDateBadgeSpace) && (
-        <View style={styles.dateBadge}>
+        <View
+          style={[
+            styles.dateBadge,
+            showDateBadge && {
+              backgroundColor: theme.homeSection,
+            },
+          ]}
+        >
           {showDateBadge && (
             <>
-              <Text style={[styles.dateDay, { color: theme.tabIconDefault }]}>{dayText}</Text>
-              <Text style={[styles.dateMonth, { color: theme.tabIconDefault }]}>{monthText}</Text>
+              <Text style={[styles.dateDay, { color: theme.homeOlive }]}>{dayText}</Text>
+              <Text style={[styles.dateMonth, { color: theme.homeMuted }]}>{monthText}</Text>
             </>
           )}
         </View>
       )}
       <View style={styles.iconContainer}>
-        <View style={[styles.iconWrapper, { backgroundColor: '#F3F4F6' }]}>
-          <Icon size={20} color="#4B5563" />
+        <View style={[styles.iconWrapper, { backgroundColor: iconBackgroundColor }]}>
+          <Icon size={20} color={iconColor} />
         </View>
       </View>
       <View style={styles.recordLeft}>
@@ -56,10 +83,12 @@ export function RecordListItem({ item, onPress, showTime = false, showDateBadge 
         )}
       </View>
       <View style={styles.recordRight}>
-        <Text style={[styles.amountText, { color: item.type === 'expense' ? theme.expense : theme.income }]}>
-          {item.type === 'expense' ? '-' : '+'}
-          {item.amount.toFixed(2)}
-        </Text>
+        <View style={[styles.amountPill, { backgroundColor: amountBackgroundColor }]}>
+          <Text style={[styles.amountText, { color: amountColor }]}>
+            {isExpense ? '-' : '+'}
+            {item.amount.toFixed(2)}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -70,16 +99,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
+    padding: 13,
     marginHorizontal: 16,
-    borderRadius: 20,
-    marginBottom: 8,
+    borderRadius: 24,
+    marginBottom: 10,
+    borderWidth: 1,
+    shadowColor: '#A9B66D',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 2,
   },
   dateBadge: {
-    width: 20,
+    width: 42,
+    minHeight: 46,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 6,
+    marginRight: 10,
   },
   dateDay: {
     fontSize: Typography.size.body,
@@ -93,12 +130,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   iconContainer: {
-    marginRight: 12,
+    marginRight: 14,
   },
   iconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -122,8 +159,13 @@ const styles = StyleSheet.create({
   recordRight: {
     alignItems: 'flex-end',
   },
+  amountPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
   amountText: {
     fontSize: Typography.size.body,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
 });

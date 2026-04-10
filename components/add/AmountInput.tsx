@@ -15,42 +15,77 @@ interface AmountInputProps {
   dateText: string;
   ledgerName: string;
   accentColor: string;
+  ledgerTriggerRef?: React.RefObject<View | null>;
+  compact?: boolean;
+  onNoteFocus?: () => void;
+  onNoteBlur?: () => void;
+  onAmountDisplayPress?: () => void;
 }
 
-export const AmountInput: React.FC<AmountInputProps> = ({ amount, result, note, onNoteChange, onDatePress, onLedgerPress, dateText, ledgerName, accentColor }) => {
+export const AmountInput: React.FC<AmountInputProps> = ({
+  amount,
+  result,
+  note,
+  onNoteChange,
+  onDatePress,
+  onLedgerPress,
+  dateText,
+  ledgerName,
+  accentColor,
+  ledgerTriggerRef,
+  compact = false,
+  onNoteFocus,
+  onNoteBlur,
+  onAmountDisplayPress,
+}) => {
   const theme = Colors.light;
+  const noteInputRef = React.useRef<TextInput>(null);
 
   const hasExpression = /[+×÷\-]/.test(amount);
 
   return (
-    <View style={[styles.container, { borderTopColor: theme.border }]}>
-      {/* Top Row: Note and Amount */}
-      <View style={styles.topRow}>
+    <View style={[styles.container, compact && styles.containerCompact]}>
+      <View style={[styles.pillRow, compact && styles.pillRowCompact]}>
+        <Pressable onPress={onDatePress} style={[styles.pill, compact && styles.pillCompact, { backgroundColor: accentColor + '16' }]}>
+          <Calendar size={compact ? 12 : 13} color={accentColor} />
+          <Text style={[styles.pillText, compact && styles.pillTextCompact, { color: accentColor }]}>{dateText}</Text>
+        </Pressable>
+
+        <View ref={ledgerTriggerRef} collapsable={false}>
+          <Pressable onPress={onLedgerPress} style={[styles.pill, compact && styles.pillCompact, { backgroundColor: accentColor + '16' }]}>
+            <Book size={compact ? 12 : 13} color={accentColor} />
+            <Text style={[styles.pillText, compact && styles.pillTextCompact, { color: accentColor }]}>{ledgerName}</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={[styles.topRow, compact && styles.topRowCompact, { backgroundColor: theme.homeSurfaceStrong }]}>
         <View style={{ flex: 1 }}>
           <TextInput
-            style={[styles.noteInput, { color: theme.text }]}
+            ref={noteInputRef}
+            style={[styles.noteInput, compact && styles.noteInputCompact, { color: theme.text }]}
             placeholder="点击输入备注或分类名"
             placeholderTextColor={theme.tabIconDefault}
             value={note}
             onChangeText={onNoteChange}
+            onFocus={onNoteFocus}
+            onBlur={onNoteBlur}
+            returnKeyType="done"
+            blurOnSubmit
           />
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[styles.amountDisplay, { color: theme.expense }]}>{hasExpression ? result || '0.00' : amount || '0.00'}</Text>
-          {hasExpression && <Text style={[styles.expressionDisplay, { color: theme.tabIconDefault }]}>{amount}</Text>}
-        </View>
-      </View>
-
-      {/* Bottom Row: Pills */}
-      <View style={styles.pillRow}>
-        <Pressable onPress={onDatePress} style={[styles.pill, { backgroundColor: accentColor + '1A' }]}>
-          <Calendar size={13} color={accentColor} />
-          <Text style={[styles.pillText, { color: accentColor }]}>{dateText}</Text>
-        </Pressable>
-
-        <Pressable onPress={onLedgerPress} style={[styles.pill, { backgroundColor: accentColor + '1A' }]}>
-          <Book size={13} color={accentColor} />
-          <Text style={[styles.pillText, { color: accentColor }]}>{ledgerName}</Text>
+        <Pressable
+          onPress={() => {
+            noteInputRef.current?.blur();
+            onAmountDisplayPress?.();
+          }}
+          hitSlop={8}
+          style={styles.amountDisplayPressable}
+        >
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={[styles.amountDisplay, compact && styles.amountDisplayCompact, { color: accentColor }]}>{hasExpression ? result || '0.00' : amount || '0.00'}</Text>
+            {hasExpression && <Text style={[styles.expressionDisplay, compact && styles.expressionDisplayCompact, { color: theme.tabIconDefault }]}>{amount}</Text>}
+          </View>
         </Pressable>
       </View>
     </View>
@@ -60,41 +95,81 @@ export const AmountInput: React.FC<AmountInputProps> = ({ amount, result, note, 
 const styles = StyleSheet.create({
   container: {
     padding: 16,
+    paddingBottom: 10,
+  },
+  containerCompact: {
+    paddingHorizontal: 14,
+    paddingTop: 14,
     paddingBottom: 8,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  topRowCompact: {
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   noteInput: {
     flex: 1,
     fontSize: Typography.size.body,
     fontWeight: '400',
   },
+  noteInputCompact: {
+    fontSize: Typography.size.label,
+  },
   amountDisplay: {
-    fontSize: Typography.size.headline,
-    fontWeight: 'bold',
+    fontSize: 30,
+    lineHeight: 32,
+    fontWeight: '900',
+  },
+  amountDisplayCompact: {
+    fontSize: 28,
+    lineHeight: 30,
+  },
+  amountDisplayPressable: {
+    marginLeft: 12,
   },
   expressionDisplay: {
     fontSize: Typography.size.caption,
-    marginTop: -2,
+    marginTop: 2,
+  },
+  expressionDisplayCompact: {
+    fontSize: Typography.size.footnote,
   },
   pillRow: {
     flexDirection: 'row',
     gap: 10,
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  pillRowCompact: {
+    gap: 8,
+    marginBottom: 8,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
+    paddingVertical: 8,
+    borderRadius: 999,
     gap: 6,
+  },
+  pillCompact: {
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    gap: 5,
   },
   pillText: {
     fontSize: Typography.size.caption,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  pillTextCompact: {
+    fontSize: Typography.size.footnote,
   },
 });

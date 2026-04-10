@@ -11,6 +11,10 @@ interface AppState {
   setSelectedDateContext: (date: string | null) => void;
   lastTab: string;
   setLastTab: (tab: string) => void;
+  dataVersion: number;
+  bumpDataVersion: () => void;
+  isHomeLaunchOverlayVisible: boolean;
+  setHomeLaunchOverlayVisible: (visible: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -24,10 +28,18 @@ export const useStore = create<AppState>()(
       setSelectedDateContext: (date) => set({ selectedDateContext: date }),
       lastTab: 'index',
       setLastTab: (tab) => set({ lastTab: tab }),
+      dataVersion: 0,
+      bumpDataVersion: () => set((state) => ({ dataVersion: state.dataVersion + 1 })),
+      isHomeLaunchOverlayVisible: true,
+      setHomeLaunchOverlayVisible: (visible) => set({ isHomeLaunchOverlayVisible: visible }),
     }),
     {
       name: 'minty-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        activeLedgerId: state.activeLedgerId,
+        nickname: state.nickname,
+      }),
     }
   )
 );

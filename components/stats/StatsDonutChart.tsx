@@ -16,13 +16,30 @@ type Props = {
   segments: SegmentGeometry[];
   emptyText: string;
   onSegmentPress: (categoryId: number) => void;
+  labelColor?: string;
+  valueColor?: string;
+  emptyTextColor?: string;
 };
 
-export function StatsDonutChart({ size, center, outerRadius, innerRadius, backgroundColor, borderColor, totalAmount, segments, emptyText, onSegmentPress }: Props) {
+export function StatsDonutChart({
+  size,
+  center,
+  outerRadius,
+  innerRadius,
+  backgroundColor,
+  borderColor,
+  totalAmount,
+  segments,
+  emptyText,
+  onSegmentPress,
+  labelColor = '#6B7280',
+  valueColor = '#111827',
+  emptyTextColor = '#6B7280',
+}: Props) {
   if (segments.length === 0) {
     return (
       <View style={styles.emptyChart}>
-        <Text style={styles.emptyText}>{emptyText}</Text>
+        <Text style={[styles.emptyText, { color: emptyTextColor }]}>{emptyText}</Text>
       </View>
     );
   }
@@ -58,8 +75,8 @@ export function StatsDonutChart({ size, center, outerRadius, innerRadius, backgr
           <Circle cx={center} cy={center} r={innerRadius - 6} fill="none" stroke={borderColor} strokeWidth={1} />
         </Svg>
         <View style={styles.totalCenter}>
-          <Text style={styles.totalLabel}>合计</Text>
-          <Text style={styles.totalValue}>{totalAmount.toFixed(2)}</Text>
+          <Text style={[styles.totalLabel, { color: labelColor }]}>合计</Text>
+          <Text style={[styles.totalValue, { color: valueColor }]}>{totalAmount.toFixed(2)}</Text>
         </View>
       </View>
     </View>
@@ -79,7 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   totalLabel: { fontSize: Typography.size.body, fontWeight: '600' },
-  totalValue: { fontSize: Typography.size.titleLg, fontWeight: '700', lineHeight: 38 },
+  totalValue: { fontSize: Typography.size.titleLg, fontWeight: '800', lineHeight: 38 },
   emptyChart: { height: 200, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { color: '#6B7280', fontSize: Typography.size.body },
+  emptyText: { fontSize: Typography.size.body },
 });

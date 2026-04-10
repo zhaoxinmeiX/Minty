@@ -2,15 +2,17 @@ import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { CircleX, Search, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { RecordListItem } from '@/components/record/RecordListItem';
+import { RecordSectionHeader } from '@/components/record/RecordSectionHeader';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { deleteRecord, getRecordsForBillList } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { parseISODate } from '@/src/utils/date';
 
@@ -18,7 +20,9 @@ export default function SearchScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = Colors.light;
-  const { activeLedgerId } = useStore();
+  const insets = useStableSafeAreaInsets();
+  const activeLedgerId = useStore((state) => state.activeLedgerId);
+  const bumpDataVersion = useStore((state) => state.bumpDataVersion);
   const { ledgers } = useLedgers();
   const activeLedger = ledgers.find((item) => item.id === activeLedgerId);
 
@@ -45,9 +49,7 @@ export default function SearchScreen() {
     }, [fetchRecords]),
   );
 
-  const expenseTotal = useMemo(() => {
-    return records.reduce((sum, item) => (item.type === 'expense' ? sum + item.amount : sum), 0);
-  }, [records]);
+  const expenseTotal = useMemo(() => records.reduce((sum, item) => (item.type === 'expense' ? sum + item.amount : sum), 0), [records]);
 
   const sections = useMemo(() => {
     const groups = new Map<string, { data: RecordItem[]; expenseTotal: number }>();
@@ -74,35 +76,51 @@ export default function SearchScreen() {
   }, [records]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top + 10 }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.headerWrap}>
-        <View style={styles.searchRow}>
-          <Search size={22} color="#9CA3AF" />
-          <TextInput
-            value={keyword}
-            onChangeText={setKeyword}
-            placeholder="搜索分类、备注、金额"
-            placeholderTextColor="#9CA3AF"
-            style={styles.searchInput}
-            autoFocus
-            returnKeyType="search"
-          />
-          {!!keyword && (
-            <Pressable onPress={() => setKeyword('')} hitSlop={8}>
-              <CircleX size={20} color="#9CA3AF" />
-            </Pressable>
-          )}
+      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.42)' }]} />
+      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.34)' }]} />
+
+      <View style={styles.header}>
+        <View style={styles.headerTitleWrap}>
+          <Text style={[styles.headerEyebrow, { color: theme.homeMuted }]}>Search</Text>
+          <Text style={[styles.headerTitle, { color: theme.homeOlive }]}>搜索账单</Text>
         </View>
-        <Pressable style={styles.closeBtn} onPress={() => router.back()}>
-          <X size={20} color="#606266" />
+        <Pressable style={[styles.closeBtn, { backgroundColor: theme.homeSurface }]} onPress={() => router.back()}>
+          <X size={18} color={theme.homeOlive} />
         </Pressable>
       </View>
 
+      <View style={[styles.searchBar, { backgroundColor: theme.homeSurface }]}>
+        <Search size={20} color={theme.homeMuted} />
+        <TextInput
+          value={keyword}
+          onChangeText={setKeyword}
+          placeholder="搜索分类、备注、金额"
+          placeholderTextColor={theme.homeMuted}
+          style={[styles.searchInput, { color: theme.text }]}
+          autoFocus
+          returnKeyType="search"
+        />
+        {!!keyword && (
+          <Pressable onPress={() => setKeyword('')} hitSlop={8}>
+            <CircleX size={18} color={theme.homeMuted} />
+          </Pressable>
+        )}
+      </View>
+
       <View style={styles.summaryRow}>
-        <Text style={styles.countText}>共 {records.length} 笔</Text>
-        <Text style={styles.expenseText}>- {expenseTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+        <View style={[styles.summaryCard, { backgroundColor: theme.homeSurface }]}>
+          <Text style={[styles.summaryLabel, { color: theme.homeMuted }]}>结果数量</Text>
+          <Text style={[styles.summaryValue, { color: theme.text }]}>{records.length} 笔</Text>
+        </View>
+        <View style={[styles.summaryCard, { backgroundColor: theme.homeSection }]}>
+          <Text style={[styles.summaryLabel, { color: theme.homeMuted }]}>支出合计</Text>
+          <Text style={[styles.summaryValue, { color: theme.expense }]}>
+            {expenseTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </Text>
+        </View>
       </View>
 
       <SectionList
@@ -110,12 +128,8 @@ export default function SearchScreen() {
         keyExtractor={(item) => item.id.toString()}
         stickySectionHeadersEnabled={false}
         contentContainerStyle={styles.listContent}
-        renderSectionHeader={({ section }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <Text style={styles.sectionTotal}>支 {section.expenseTotal.toFixed(2)}</Text>
-          </View>
-        )}
+        showsVerticalScrollIndicator={false}
+        renderSectionHeader={({ section }) => <RecordSectionHeader title={section.title} total={section.expenseTotal} />}
         renderItem={({ item }) => (
           <RecordListItem
             item={item}
@@ -126,7 +140,12 @@ export default function SearchScreen() {
             }}
           />
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>没有找到相关账单</Text>}
+        ListEmptyComponent={
+          <View style={[styles.emptyCard, { backgroundColor: theme.homeSurface }]}>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>没有找到相关账单</Text>
+            <Text style={[styles.emptyText, { color: theme.homeMuted }]}>换个关键词，或者直接搜索金额和备注。</Text>
+          </View>
+        }
       />
 
       <RecordDetailSheet
@@ -136,98 +155,125 @@ export default function SearchScreen() {
         onClose={() => setIsDetailVisible(false)}
         onEdit={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/(tabs)/add', params: { id: record.id.toString(), mode: 'edit' } });
+          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } });
         }}
         onCopy={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/(tabs)/add', params: { id: record.id.toString(), mode: 'copy' } });
+          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } });
         }}
         onDelete={(id) => {
           deleteRecord(db, id);
+          bumpDataVersion();
           setIsDetailVisible(false);
           fetchRecords();
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerWrap: {
-    marginTop: 6,
+  container: {
+    flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  screenGlow: {
+    position: 'absolute',
+    borderRadius: 999,
+  },
+  screenGlowTop: {
+    width: 200,
+    height: 200,
+    top: 44,
+    left: -48,
+  },
+  screenGlowBottom: {
+    width: 240,
+    height: 240,
+    bottom: 120,
+    right: -84,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  headerTitleWrap: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  headerEyebrow: {
+    fontSize: Typography.size.caption,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  headerTitle: {
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  searchBar: {
+    height: 52,
+    borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  searchRow: {
-    flex: 1,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    marginBottom: 14,
   },
   searchInput: {
     flex: 1,
-    color: '#111827',
     fontSize: Typography.size.body,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   summaryRow: {
-    marginTop: 14,
-    marginBottom: 4,
-    paddingHorizontal: 16,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 6,
   },
-  countText: {
-    color: '#6B7280',
-    fontSize: Typography.size.body,
+  summaryCard: {
+    flex: 1,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  summaryLabel: {
+    fontSize: Typography.size.caption,
     fontWeight: '600',
+    marginBottom: 6,
   },
-  expenseText: {
-    color: '#DC2626',
-    fontSize: Typography.size.body,
-    fontWeight: '700',
+  summaryValue: {
+    fontSize: Typography.size.title,
+    fontWeight: '800',
   },
   listContent: {
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
-  sectionHeader: {
-    marginTop: 10,
-    marginBottom: 6,
-    paddingHorizontal: 16,
-    height: 32,
-    backgroundColor: '#F3F4F6',
-    flexDirection: 'row',
+  emptyCard: {
+    marginTop: 32,
+    borderRadius: 28,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  sectionTitle: {
-    color: '#374151',
-    fontSize: Typography.size.label,
-    fontWeight: '700',
-  },
-  sectionTotal: {
-    color: '#6B7280',
-    fontSize: Typography.size.label,
-    fontWeight: '700',
+  emptyTitle: {
+    fontSize: Typography.size.title,
+    fontWeight: '800',
+    marginBottom: 8,
   },
   emptyText: {
-    marginTop: 120,
-    textAlign: 'center',
-    color: '#9CA3AF',
     fontSize: Typography.size.body,
   },
 });

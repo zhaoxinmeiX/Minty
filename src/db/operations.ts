@@ -1,8 +1,44 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Category, Ledger, RecordItem } from './schema';
 
+const padMonth = (value: string) => value.padStart(2, '0');
+
+const formatDateOnly = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getMonthBounds = (year: string, month: string) => {
+  const normalizedMonth = padMonth(month);
+  const start = new Date(Number(year), Number(normalizedMonth) - 1, 1);
+  const end = new Date(Number(year), Number(normalizedMonth), 1);
+  return {
+    start: `${formatDateOnly(start)} 00:00:00`,
+    end: `${formatDateOnly(end)} 00:00:00`,
+  };
+};
+
+const getDateBounds = (startDate?: string, endDate?: string) => {
+  const start = startDate ? `${startDate} 00:00:00` : undefined;
+  const end = endDate
+    ? (() => {
+        const nextDay = new Date(`${endDate}T00:00:00`);
+        nextDay.setDate(nextDay.getDate() + 1);
+        return `${formatDateOnly(nextDay)} 00:00:00`;
+      })()
+    : undefined;
+
+  return { start, end };
+};
+
 export const getLedgers = (db: SQLiteDatabase): Ledger[] => {
   return db.getAllSync<Ledger>('SELECT * FROM ledgers ORDER BY created_at ASC');
+};
+
+export const getLedgersAsync = (db: SQLiteDatabase): Promise<Ledger[]> => {
+  return db.getAllAsync<Ledger>('SELECT * FROM ledgers ORDER BY created_at ASC');
 };
 
 export const addLedger = (db: SQLiteDatabase, name: string, currency: string = 'NZD') => {
@@ -29,17 +65,67 @@ export const getRecordsByLedger = (db: SQLiteDatabase, ledgerId: number): Record
   );
 };
 
+export const getRecordsByLedgerAsync = (db: SQLiteDatabase, ledgerId: number): Promise<RecordItem[]> => {
+  return db.getAllAsync<RecordItem>(
+    `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+     FROM records r
+     LEFT JOIN categories c ON r.category_id = c.id
+     WHERE r.ledger_id = ?
+     ORDER BY r.created_at DESC`,
+    ledgerId,
+  );
+};
+
 export const getRecordsByLedgerAndMonth = (db: SQLiteDatabase, ledgerId: number, year: string, month: string): RecordItem[] => {
-  const likePattern = `${year}-${month}-%`;
+  const { start, end } = getMonthBounds(year, month);
   return db.getAllSync<RecordItem>(
     `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
      FROM records r
      LEFT JOIN categories c ON r.category_id = c.id
-     WHERE r.ledger_id = ? AND date(r.created_at) LIKE ?
+     WHERE r.ledger_id = ? AND r.created_at >= ? AND r.created_at < ?
      ORDER BY r.created_at DESC`,
     ledgerId,
-    likePattern,
+    start,
+    end,
   );
+};
+
+export const getRecordsByLedgerAndMonthAsync = (db: SQLiteDatabase, ledgerId: number, year: string, month: string): Promise<RecordItem[]> => {
+  const { start, end } = getMonthBounds(year, month);
+  return db.getAllAsync<RecordItem>(
+    `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+     FROM records r
+     LEFT JOIN categories c ON r.category_id = c.id
+     WHERE r.ledger_id = ? AND r.created_at >= ? AND r.created_at < ?
+     ORDER BY r.created_at DESC`,
+    ledgerId,
+    start,
+    end,
+  );
+};
+
+export const getRecordsByLedgerInRangeAsync = async (db: SQLiteDatabase, ledgerId: number, startDate?: string, endDate?: string): Promise<RecordItem[]> => {
+  const { start, end } = getDateBounds(startDate, endDate);
+  let query = `
+    SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+    FROM records r
+    LEFT JOIN categories c ON r.category_id = c.id
+    WHERE r.ledger_id = ?
+  `;
+  const params: Array<number | string> = [ledgerId];
+
+  if (start) {
+    query += ' AND r.created_at >= ?';
+    params.push(start);
+  }
+
+  if (end) {
+    query += ' AND r.created_at < ?';
+    params.push(end);
+  }
+
+  query += ' ORDER BY r.created_at DESC';
+  return db.getAllAsync<RecordItem>(query, ...params);
 };
 
 export type BillListType = 'all' | 'expense' | 'income';
@@ -60,6 +146,10 @@ export type BillListCategoryOption = {
   category: string;
   icon: string;
 };
+
+type RecordMutationBase = Omit<RecordItem, 'id' | 'created_at' | 'icon'>;
+type RecordInsertData = RecordMutationBase & { created_at?: string };
+type RecordUpdateData = RecordMutationBase & { created_at: string };
 
 export const getRecordsForBillList = (db: SQLiteDatabase, params: BillListQueryParams): RecordItem[] => {
   const { ledgerId, startDate, endDate, type = 'all', minAmount, maxAmount, categoryId, keyword } = params;
@@ -145,16 +235,37 @@ export const getRecordById = (db: SQLiteDatabase, id: number): RecordItem | null
 };
 
 export const getDailySummaryByMonth = (db: SQLiteDatabase, ledgerId: number, year: string, month: string): { date: string; total_expense: number; total_income: number }[] => {
-  const likePattern = `${year}-${month}-%`;
+  const { start, end } = getMonthBounds(year, month);
   return db.getAllSync<{ date: string; total_expense: number; total_income: number }>(
-    `SELECT date(created_at) as date,
+    `SELECT substr(created_at, 1, 10) as date,
             SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense,
             SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income
      FROM records
-     WHERE ledger_id = ? AND date(created_at) LIKE ?
-     GROUP BY date(created_at)`,
+     WHERE ledger_id = ? AND created_at >= ? AND created_at < ?
+     GROUP BY substr(created_at, 1, 10)`,
     ledgerId,
-    likePattern,
+    start,
+    end,
+  );
+};
+
+export const getDailySummaryByMonthAsync = (
+  db: SQLiteDatabase,
+  ledgerId: number,
+  year: string,
+  month: string,
+): Promise<{ date: string; total_expense: number; total_income: number }[]> => {
+  const { start, end } = getMonthBounds(year, month);
+  return db.getAllAsync<{ date: string; total_expense: number; total_income: number }>(
+    `SELECT substr(created_at, 1, 10) as date,
+            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense,
+            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income
+     FROM records
+     WHERE ledger_id = ? AND created_at >= ? AND created_at < ?
+     GROUP BY substr(created_at, 1, 10)`,
+    ledgerId,
+    start,
+    end,
   );
 };
 
@@ -167,38 +278,94 @@ export const getCategoryStats = (
 ): { category: string; category_id: number; icon: string; totalAmount: number; count: number; percentage: number }[] => {
   let query = `
     SELECT
-      category,
-      category_id,
-      SUM(amount) as totalAmount,
+      r.category,
+      r.category_id,
+      IFNULL(c.icon, 'Question') as icon,
+      SUM(r.amount) as totalAmount,
       COUNT(*) as count
-    FROM records
-    WHERE ledger_id = ? AND type = ?
+    FROM records r
+    LEFT JOIN categories c ON r.category_id = c.id
+    WHERE r.ledger_id = ? AND r.type = ?
   `;
   const params: any[] = [ledgerId, type];
+  const { start, end } = getDateBounds(startDate, endDate);
 
-  if (startDate && endDate) {
-    query += ` AND date(created_at) BETWEEN ? AND ?`;
-    params.push(startDate, endDate);
-  } else if (startDate) {
-    query += ` AND date(created_at) >= ?`;
-    params.push(startDate);
+  if (start) {
+    query += ` AND r.created_at >= ?`;
+    params.push(start);
   }
 
-  query += ` GROUP BY category_id ORDER BY totalAmount DESC`;
+  if (end) {
+    query += ` AND r.created_at < ?`;
+    params.push(end);
+  }
 
-  const rows = db.getAllSync<{ category: string; category_id: number; totalAmount: number; count: number }>(query, ...params);
+  query += ` GROUP BY r.category_id, r.category, c.icon ORDER BY totalAmount DESC`;
+
+  const rows = db.getAllSync<{ category: string; category_id: number; icon: string; totalAmount: number; count: number }>(query, ...params);
 
   const totalSum = rows.reduce((acc, row) => acc + row.totalAmount, 0);
 
-  return rows.map((row) => {
-    // We need the icon from categories table
-    const cat = db.getFirstSync<{ icon: string }>('SELECT icon FROM categories WHERE id = ?', row.category_id);
-    return {
-      ...row,
-      icon: cat?.icon || 'Question',
-      percentage: totalSum > 0 ? (row.totalAmount / totalSum) * 100 : 0,
-    };
-  });
+  return rows.map((row) => ({
+    ...row,
+    percentage: totalSum > 0 ? (row.totalAmount / totalSum) * 100 : 0,
+  }));
+};
+
+export const getCategoryStatsAsync = async (
+  db: SQLiteDatabase,
+  ledgerId: number,
+  type: 'expense' | 'income',
+  startDate?: string,
+  endDate?: string,
+): Promise<{ category: string; category_id: number; icon: string; totalAmount: number; count: number; percentage: number }[]> => {
+  let query = `
+    SELECT
+      r.category,
+      r.category_id,
+      IFNULL(c.icon, 'Question') as icon,
+      SUM(r.amount) as totalAmount,
+      COUNT(*) as count
+    FROM records r
+    LEFT JOIN categories c ON r.category_id = c.id
+    WHERE r.ledger_id = ? AND r.type = ?
+  `;
+  const params: any[] = [ledgerId, type];
+  const { start, end } = getDateBounds(startDate, endDate);
+
+  if (start) {
+    query += ` AND r.created_at >= ?`;
+    params.push(start);
+  }
+
+  if (end) {
+    query += ` AND r.created_at < ?`;
+    params.push(end);
+  }
+
+  query += ` GROUP BY r.category_id, r.category, c.icon ORDER BY totalAmount DESC`;
+
+  const rows = await db.getAllAsync<{ category: string; category_id: number; icon: string; totalAmount: number; count: number }>(query, ...params);
+  const totalSum = rows.reduce((acc, row) => acc + row.totalAmount, 0);
+
+  return rows.map((row) => ({
+    ...row,
+    percentage: totalSum > 0 ? (row.totalAmount / totalSum) * 100 : 0,
+  }));
+};
+
+export const getMonthlyExpenseTotalAsync = async (db: SQLiteDatabase, ledgerId: number, year: string, month: string): Promise<number> => {
+  const { start, end } = getMonthBounds(year, month);
+  const result = await db.getFirstAsync<{ total_expense: number | null }>(
+    `SELECT IFNULL(SUM(amount), 0) as total_expense
+     FROM records
+     WHERE ledger_id = ? AND type = 'expense' AND created_at >= ? AND created_at < ?`,
+    ledgerId,
+    start,
+    end,
+  );
+
+  return result?.total_expense ?? 0;
 };
 
 export const ensureLedgerSync = (db: SQLiteDatabase, name: string): number => {
@@ -209,7 +376,7 @@ export const ensureLedgerSync = (db: SQLiteDatabase, name: string): number => {
   return addLedger(db, name);
 };
 
-export const addRecord = (db: SQLiteDatabase, data: Omit<RecordItem, 'id' | 'created_at'> & { created_at?: string }) => {
+export const addRecord = (db: SQLiteDatabase, data: RecordInsertData) => {
   if (data.created_at) {
     const result = db.runSync(
       `INSERT INTO records (amount, type, category_id, sub_category_id, category, sub_category, note, member, ledger_id, created_at)
@@ -244,7 +411,7 @@ export const addRecord = (db: SQLiteDatabase, data: Omit<RecordItem, 'id' | 'cre
   }
 };
 
-export const updateRecord = (db: SQLiteDatabase, id: number, data: Omit<RecordItem, 'id' | 'created_at'> & { created_at: string }) => {
+export const updateRecord = (db: SQLiteDatabase, id: number, data: RecordUpdateData) => {
   return db.runSync(
     `UPDATE records SET amount = ?, type = ?, category_id = ?, sub_category_id = ?, category = ?, sub_category = ?, note = ?, member = ?, ledger_id = ?, created_at = ?
      WHERE id = ?`,

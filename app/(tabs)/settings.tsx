@@ -1,35 +1,72 @@
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { CheckCircle2, ChevronRight, Circle, Edit3, FileDown, FileUp, Plus, Trash2, User } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, InteractionManager, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { addLedger, deleteLedger, getLedgers, updateLedger } from '@/src/db/operations';
+import { addLedger, deleteLedger, getLedgersAsync, updateLedger } from '@/src/db/operations';
 import { Ledger } from '@/src/db/schema';
+import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { parseISODate } from '@/src/utils/date';
 import { exportLedgerToExcel, importExcelToLedger } from '@/src/utils/excel';
 
 export default function SettingsScreen() {
   const db = useSQLiteContext();
-  const { activeLedgerId, setActiveLedgerId, nickname, setNickname, setLastTab } = useStore();
+  const activeLedgerId = useStore((state) => state.activeLedgerId);
+  const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
+  const nickname = useStore((state) => state.nickname);
+  const setNickname = useStore((state) => state.setNickname);
+  const setLastTab = useStore((state) => state.setLastTab);
+  const dataVersion = useStore((state) => state.dataVersion);
+  const bumpDataVersion = useStore((state) => state.bumpDataVersion);
   const theme = Colors.light;
+  const insets = useStableSafeAreaInsets();
 
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [newLedgerName, setNewLedgerName] = useState('');
+  const hasFocusedRef = useRef(false);
+  const lastSyncedDataVersionRef = useRef(dataVersion);
+  const requestIdRef = useRef(0);
 
-  const loadLedgers = useCallback(() => {
-    const data = getLedgers(db);
+  const loadLedgers = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    const data = await getLedgersAsync(db);
+    if (requestId !== requestIdRef.current) return;
     setLedgers(data);
   }, [db]);
 
+  useEffect(() => {
+    void (async () => {
+      await loadLedgers();
+      hasFocusedRef.current = true;
+      lastSyncedDataVersionRef.current = useStore.getState().dataVersion;
+    })();
+  }, [loadLedgers]);
+
   useFocusEffect(
     useCallback(() => {
-      loadLedgers();
       setLastTab('settings');
-    }, [loadLedgers, setLastTab]),
+
+      if (!hasFocusedRef.current) {
+        return;
+      }
+
+      if (lastSyncedDataVersionRef.current === dataVersion) {
+        return;
+      }
+
+      const task = InteractionManager.runAfterInteractions(() => {
+        void (async () => {
+          await loadLedgers();
+          lastSyncedDataVersionRef.current = useStore.getState().dataVersion;
+        })();
+      });
+
+      return () => task.cancel();
+    }, [dataVersion, loadLedgers, setLastTab]),
   );
 
   const handleEditNickname = () => {
@@ -55,8 +92,9 @@ export default function SettingsScreen() {
   const handleCreateLedger = () => {
     if (!newLedgerName.trim()) return;
     addLedger(db, newLedgerName.trim());
+    bumpDataVersion();
     setNewLedgerName('');
-    loadLedgers();
+    void loadLedgers();
   };
 
   const handleEditLedger = (ledger: Ledger) => {
@@ -70,7 +108,8 @@ export default function SettingsScreen() {
           onPress: (newName?: string) => {
             if (newName && newName.trim()) {
               updateLedger(db, ledger.id, newName.trim());
-              loadLedgers();
+              bumpDataVersion();
+              void loadLedgers();
             }
           },
         },
@@ -92,20 +131,23 @@ export default function SettingsScreen() {
         text: '确定删除',
         style: 'destructive',
         onPress: () => {
-          deleteLedger(db, ledger.id);
-          if (activeLedgerId === ledger.id) {
-            const remaining = getLedgers(db);
-            if (remaining.length > 0) {
-              setActiveLedgerId(remaining[0].id);
+          void (async () => {
+            deleteLedger(db, ledger.id);
+            bumpDataVersion();
+            if (activeLedgerId === ledger.id) {
+              const remaining = await getLedgersAsync(db);
+              if (remaining.length > 0) {
+                setActiveLedgerId(remaining[0].id);
+              }
             }
-          }
-          loadLedgers();
+            await loadLedgers();
+          })();
         },
       },
     ]);
   };
 
-  const activeLedger = ledgers.find((l) => l.id === activeLedgerId);
+  const activeLedger = ledgers.find((ledger) => ledger.id === activeLedgerId);
 
   const handleExport = () => {
     if (activeLedger) {
@@ -116,105 +158,119 @@ export default function SettingsScreen() {
   const handleImport = () => {
     if (activeLedgerId) {
       importExcelToLedger(db, activeLedgerId, () => {
-        loadLedgers();
+        bumpDataVersion();
+        void loadLedgers();
       });
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.fixedHeader, { backgroundColor: theme.background }]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>设置</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
+      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.48)' }]} />
+      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.34)' }]} />
 
-      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.content}>
-        {/* Profile Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>个人资料</Text>
-          <Pressable style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={handleEditNickname}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconWrapper, { backgroundColor: theme.tint + '15' }]}>
-                <User size={22} color={theme.tint} />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={[styles.cardTitle, { color: theme.text }]}>我的昵称</Text>
-                <Text style={[styles.cardValue, { color: theme.tabIconDefault }]}>{nickname}</Text>
-              </View>
-              <ChevronRight size={20} color={theme.tabIconDefault} />
-            </View>
-          </Pressable>
+      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={[styles.headerEyebrow, { color: theme.homeMuted }]}>Preferences</Text>
+          <Text style={[styles.headerTitle, { color: theme.homeOlive }]}>设置</Text>
         </View>
 
-        {/* Data Management Section */}
+        <Pressable style={[styles.profileHero, { backgroundColor: theme.homeSurface }]} onPress={handleEditNickname}>
+          <View style={[styles.profileAvatar, { backgroundColor: theme.homeSection }]}>
+            <User size={24} color={theme.homeOlive} />
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileLabel, { color: theme.homeMuted }]}>当前昵称</Text>
+            <Text style={[styles.profileName, { color: theme.text }]}>{nickname}</Text>
+          </View>
+          <ChevronRight size={20} color={theme.homeOlive} />
+        </Pressable>
+
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>数据管理</Text>
-          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border, padding: 0 }]}>
+          <Text style={[styles.sectionLabel, { color: theme.homeMuted }]}>数据管理</Text>
+          <View style={[styles.sectionCard, { backgroundColor: theme.homeSurface }]}>
             <Pressable style={styles.listItem} onPress={handleImport}>
-              <View style={[styles.iconWrapper, { backgroundColor: theme.income + '15' }]}>
+              <View style={[styles.iconWrapper, { backgroundColor: '#E4F1E3' }]}>
                 <FileDown size={20} color={theme.income} />
               </View>
-              <Text style={[styles.listText, { color: theme.text }]}>导入数据 (Excel)</Text>
-              <ChevronRight size={20} color={theme.tabIconDefault} />
-            </Pressable>
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            <Pressable style={styles.listItem} onPress={handleExport}>
-              <View style={[styles.iconWrapper, { backgroundColor: theme.tint + '15' }]}>
-                <FileUp size={20} color={theme.tint} />
+              <View style={styles.listTextWrap}>
+                <Text style={[styles.listTitle, { color: theme.text }]}>导入数据</Text>
+                <Text style={[styles.listHint, { color: theme.homeMuted }]}>从 Excel 合并到账本</Text>
               </View>
-              <Text style={[styles.listText, { color: theme.text }]}>导出数据 (Excel)</Text>
-              <ChevronRight size={20} color={theme.tabIconDefault} />
+              <ChevronRight size={18} color={theme.homeOlive} />
+            </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: 'rgba(110, 125, 66, 0.08)' }]} />
+
+            <Pressable style={styles.listItem} onPress={handleExport}>
+              <View style={[styles.iconWrapper, { backgroundColor: theme.homeBlueSoft }]}>
+                <FileUp size={20} color={theme.homeOlive} />
+              </View>
+              <View style={styles.listTextWrap}>
+                <Text style={[styles.listTitle, { color: theme.text }]}>导出数据</Text>
+                <Text style={[styles.listHint, { color: theme.homeMuted }]}>导出当前账本的 Excel</Text>
+              </View>
+              <ChevronRight size={18} color={theme.homeOlive} />
             </Pressable>
           </View>
-          <Text style={[styles.sectionHint, { color: theme.tabIconDefault }]}>导入导出将针对当前选中的账本：{activeLedger?.name || '默认账本'}</Text>
+          <Text style={[styles.sectionHint, { color: theme.homeMuted }]}>当前目标账本：{activeLedger?.name || '默认账本'}</Text>
         </View>
 
-        {/* Ledger Management Section */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>账本管理</Text>
-          </View>
+          <Text style={[styles.sectionLabel, { color: theme.homeMuted }]}>账本管理</Text>
 
-          {/* Create Ledger */}
-          <View style={[styles.createContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={[styles.createContainer, { backgroundColor: theme.homeSurface }]}>
             <TextInput
               style={[styles.input, { color: theme.text }]}
-              placeholder="新建账本名称..."
-              placeholderTextColor={theme.tabIconDefault}
+              placeholder="新建账本名称"
+              placeholderTextColor={theme.homeMuted}
               value={newLedgerName}
               onChangeText={setNewLedgerName}
             />
-            <Pressable style={[styles.createBtn, { backgroundColor: theme.tint }]} onPress={handleCreateLedger}>
-              <Plus size={20} color="#000" />
+            <Pressable style={[styles.createBtn, { backgroundColor: theme.homeAccent }]} onPress={handleCreateLedger}>
+              <Plus size={18} color="#FFF" />
             </Pressable>
           </View>
 
-          {ledgers.map((item) => (
-            <View
-              key={item.id}
-              style={[styles.ledgerCard, { backgroundColor: theme.card, borderColor: theme.border }, activeLedgerId === item.id && { borderColor: theme.tint, borderWidth: 1.5 }]}
-            >
-              <Pressable style={styles.ledgerInfo} onPress={() => setActiveLedgerId(item.id)}>
-                <View style={styles.radioContainer}>
-                  {activeLedgerId === item.id ? <CheckCircle2 size={24} color={theme.tint} /> : <Circle size={24} color={theme.tabIconDefault} />}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.ledgerName, { color: theme.text }]}>{item.name}</Text>
-                  <Text style={styles.ledgerDate}>创建于 {(parseISODate(item.created_at) ?? new Date(item.created_at)).toLocaleDateString()}</Text>
-                </View>
-              </Pressable>
+          {ledgers.map((ledger) => {
+            const active = activeLedgerId === ledger.id;
+            return (
+              <View
+                key={ledger.id}
+                style={[
+                  styles.ledgerCard,
+                  {
+                    backgroundColor: theme.homeSurface,
+                    borderColor: active ? theme.homeAccent : 'rgba(110, 125, 66, 0.08)',
+                  },
+                ]}
+              >
+                <Pressable style={styles.ledgerInfo} onPress={() => setActiveLedgerId(ledger.id)}>
+                  <View style={styles.radioContainer}>
+                    {active ? <CheckCircle2 size={24} color={theme.homeAccent} /> : <Circle size={24} color={theme.homeMuted} />}
+                  </View>
+                  <View style={styles.ledgerMeta}>
+                    <Text style={[styles.ledgerName, { color: theme.text }]}>{ledger.name}</Text>
+                    <Text style={[styles.ledgerDate, { color: theme.homeMuted }]}>
+                      创建于 {(parseISODate(ledger.created_at) ?? new Date(ledger.created_at)).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </Pressable>
 
-              <View style={styles.ledgerActions}>
-                <Pressable onPress={() => handleEditLedger(item)} style={styles.iconBtn}>
-                  <Edit3 size={18} color={theme.tabIconDefault} />
-                </Pressable>
-                <Pressable onPress={() => handleDeleteLedger(item)} style={styles.iconBtn}>
-                  <Trash2 size={18} color={theme.expense} />
-                </Pressable>
+                <View style={styles.ledgerActions}>
+                  <Pressable onPress={() => handleEditLedger(ledger)} style={[styles.actionBtn, { backgroundColor: theme.homeSurfaceStrong }]}>
+                    <Edit3 size={16} color={theme.homeOlive} />
+                  </Pressable>
+                  <Pressable onPress={() => handleDeleteLedger(ledger)} style={[styles.actionBtn, { backgroundColor: '#FDE9DE' }]}>
+                    <Trash2 size={16} color={theme.expense} />
+                  </Pressable>
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
+
     </View>
   );
 }
@@ -223,96 +279,135 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  fixedHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 12,
+  screenGlow: {
+    position: 'absolute',
+    borderRadius: 999,
+  },
+  screenGlowTop: {
+    width: 210,
+    height: 210,
+    top: 56,
+    left: -46,
+  },
+  screenGlowBottom: {
+    width: 260,
+    height: 260,
+    bottom: 100,
+    right: -96,
   },
   scrollArea: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 132,
+  },
+  header: {
+    marginBottom: 16,
+  },
+  headerEyebrow: {
+    fontSize: Typography.size.caption,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 6,
   },
   headerTitle: {
-    fontSize: Typography.size.title,
-    fontWeight: 'bold',
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: '900',
+    letterSpacing: -1,
   },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionLabel: {
-    fontSize: Typography.size.label,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  sectionHint: {
-    fontSize: Typography.size.label,
-    marginTop: 8,
-    marginLeft: 4,
-  },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    overflow: 'hidden',
-  },
-  cardHeader: {
+  profileHero: {
+    borderRadius: 30,
+    padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#A9B66D',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    elevation: 4,
   },
-  iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  profileAvatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
-  cardInfo: {
+  profileInfo: {
     flex: 1,
   },
-  cardTitle: {
-    fontSize: Typography.size.body,
+  profileLabel: {
+    fontSize: Typography.size.caption,
     fontWeight: '600',
+    marginBottom: 4,
   },
-  cardValue: {
-    fontSize: Typography.size.body,
-    marginTop: 2,
+  profileName: {
+    fontSize: Typography.size.titleLg,
+    fontWeight: '800',
+  },
+  section: {
+    marginBottom: 28,
+  },
+  sectionLabel: {
+    fontSize: Typography.size.caption,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  sectionCard: {
+    borderRadius: 28,
+    overflow: 'hidden',
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
-  listText: {
+  iconWrapper: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  listTextWrap: {
     flex: 1,
+  },
+  listTitle: {
     fontSize: Typography.size.body,
-    fontWeight: '500',
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  listHint: {
+    fontSize: Typography.size.caption,
   },
   divider: {
     height: 1,
-    marginLeft: 72,
+    marginLeft: 70,
+  },
+  sectionHint: {
+    fontSize: Typography.size.caption,
+    marginTop: 8,
+    marginLeft: 4,
   },
   createContainer: {
     flexDirection: 'row',
-    padding: 8,
-    paddingLeft: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
     alignItems: 'center',
+    borderRadius: 24,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingVertical: 8,
+    marginBottom: 14,
   },
   input: {
     flex: 1,
@@ -320,42 +415,51 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.body,
   },
   createBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   ledgerCard: {
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 28,
+    borderWidth: 1.5,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 8,
+    padding: 8,
+    backgroundColor: '#FFF',
   },
   ledgerInfo: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingVertical: 8,
+    paddingLeft: 8,
   },
   radioContainer: {
-    marginRight: 16,
+    marginRight: 14,
+  },
+  ledgerMeta: {
+    flex: 1,
   },
   ledgerName: {
     fontSize: Typography.size.body,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   ledgerDate: {
     fontSize: Typography.size.caption,
-    color: '#888',
   },
   ledgerActions: {
     flexDirection: 'row',
+    gap: 8,
   },
-  iconBtn: {
-    padding: 10,
+  actionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

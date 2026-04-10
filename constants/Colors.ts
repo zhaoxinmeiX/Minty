@@ -1,22 +1,34 @@
-const tintColorLight = '#2f95dc';
-export const ACCENT_COLOR = '#FF9500';
+const tintColorLight = '#6E7D42';
+export const ACCENT_COLOR = '#F98C58';
 
 export const Colors = {
   light: {
-    text: '#000',
-    background: '#FDFDFB', // Very light warm background
+    text: '#2C3420',
+    background: '#F7F4EC',
     tint: tintColorLight,
-    tabIconDefault: '#999',
+    tabIconDefault: '#8B907B',
     tabIconSelected: tintColorLight,
-    card: '#fff',
-    border: '#E4E6EB',
-    expense: '#E63946',
-    income: '#2A9D8F',
+    card: '#FFF9F1',
+    border: '#E8DFC7',
+    expense: '#DD724A',
+    income: '#648A5C',
     accent: ACCENT_COLOR,
-    popoverBg: '#FFFFFF',
-    popoverText: '#333',
-    popoverIconBg: '#F5F5F5',
-    modalOverlay: 'rgba(0,0,0,0.3)',
-    spendingCard: '#FFD89B', // Peach orange for the summary card
+    popoverBg: '#FFF9F1',
+    popoverText: '#2C3420',
+    popoverIconBg: '#EEF3DE',
+    modalOverlay: 'rgba(44,52,32,0.32)',
+    spendingCard: '#F7C48C',
+    homeBackground: '#DCE8B4',
+    homeSurface: '#FFF9F1',
+    homeSurfaceStrong: '#F6EDE4',
+    homeOlive: '#6E7D42',
+    homeOliveSoft: '#96A56A',
+    homeAccent: '#F98C58',
+    homeAccentSoft: '#FCCEB4',
+    homeBlue: '#ABD7FB',
+    homeBlueSoft: '#DDEFFC',
+    homeSection: '#EEF3D8',
+    homeMuted: '#7F8671',
+    homeShadow: '#A9B66D',
   },
 };
