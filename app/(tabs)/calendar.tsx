@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Calendar as CalendarIcon, ChevronDown } from 'lucide-react-native';
+import { Calendar as CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react-native';
 import React, { startTransition, useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, InteractionManager, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { CalendarList, DateData } from 'react-native-calendars';
@@ -39,6 +39,11 @@ export default function CalendarScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const { ledgers } = useLedgers();
   const activeLedger = ledgers.find((l) => l.id === activeLedgerId);
+  const displayLedgerName = useMemo(() => {
+    const rawName = activeLedger?.name || '账本';
+    const chars = Array.from(rawName);
+    return chars.length > 6 ? `${chars.slice(0, 6).join('')}...` : rawName;
+  }, [activeLedger?.name]);
 
   const todayStr = useMemo(() => dayjs().format('YYYY-MM-DD'), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -292,11 +297,11 @@ export default function CalendarScreen() {
         setIsDetailVisible(true);
       }}
       showTime
+      compact
     />
   );
 
   const dayRecords = useMemo(() => recordsByDate[selectedDate] || [], [recordsByDate, selectedDate]);
-  const selectedSummary = dailySummaries[selectedDate] ?? { expense: 0, income: 0 };
   const monthDisplay = useMemo(() => {
     const parsed = dayjs(`${currentMonth}-01`, 'YYYY-MM-DD', true);
     return parsed.isValid() ? parsed.format('YYYY年M月') : currentMonth;
@@ -339,41 +344,32 @@ export default function CalendarScreen() {
   }, [dayRecords, selectedDate]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top + 10 }]}>
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
       <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.52)' }]} />
       <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowRight, { backgroundColor: 'rgba(171, 215, 251, 0.36)' }]} />
 
       <View style={styles.header}>
-        <View style={styles.headerTitleWrap}>
-          <Text style={[styles.headerEyebrow, { color: theme.homeMuted }]}>Calendar View</Text>
-          <Text style={[styles.headerTitle, { color: theme.homeOlive }]}>账单日历</Text>
-        </View>
-        <Pressable style={[styles.todayButton, { backgroundColor: theme.homeSurface }]} onPress={handleJumpToToday}>
-          <CalendarIcon size={18} color={theme.homeOlive} />
-          <Text style={[styles.todayButtonText, { color: theme.homeOlive }]}>回到今天</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.chipRow}>
-        <View ref={ledgerButtonRef} collapsable={false}>
-          <Pressable style={[styles.headerChip, { backgroundColor: theme.homeSurface }]} onPress={openLedgerPicker}>
-            <Text style={[styles.headerChipLabel, { color: theme.homeMuted }]}>账本</Text>
-            <View style={styles.headerChipValueRow}>
-              <Text style={[styles.headerChipValue, { color: theme.text }]} numberOfLines={1}>
-                {activeLedger?.name || '账本'}
-              </Text>
-              <ChevronDown size={16} color={theme.homeOlive} />
-            </View>
+        <View ref={ledgerButtonRef} collapsable={false} style={styles.headerLedgerButtonWrap}>
+          <Pressable style={[styles.headerLedgerButton, { backgroundColor: theme.homeSurface }]} onPress={openLedgerPicker}>
+            <Text style={[styles.headerLedgerName, { color: theme.text }]} numberOfLines={1}>
+              {displayLedgerName}
+            </Text>
+            <ChevronRight size={16} color={theme.homeOlive} strokeWidth={2.5} />
           </Pressable>
         </View>
 
-        <Pressable style={[styles.headerChip, styles.headerChipMonth, { backgroundColor: theme.homeSurface }]} onPress={() => setIsMonthPickerVisible(true)}>
-          <Text style={[styles.headerChipLabel, { color: theme.homeMuted }]}>月份</Text>
-          <View style={styles.headerChipValueRow}>
-            <Text style={[styles.headerChipValue, { color: theme.text }]}>{monthDisplay}</Text>
+        <View pointerEvents="box-none" style={styles.monthPickerCenter}>
+          <Pressable style={[styles.monthPill, { backgroundColor: theme.homeSurface }]} onPress={() => setIsMonthPickerVisible(true)}>
+            <Text style={[styles.monthPillText, { color: theme.text }]}>{monthDisplay}</Text>
             <ChevronDown size={16} color={theme.homeOlive} />
-          </View>
-        </Pressable>
+          </Pressable>
+        </View>
+
+        <View style={styles.headerIcons}>
+          <Pressable style={[styles.iconButton, { backgroundColor: theme.homeSurface }]} onPress={handleJumpToToday}>
+            <CalendarIcon size={20} color={theme.homeOlive} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={[styles.calendarShell, { backgroundColor: theme.homeSurface }]}>
@@ -417,18 +413,7 @@ export default function CalendarScreen() {
         </View>
       </View>
 
-      <View style={styles.summaryRow}>
-        <View style={[styles.summaryCard, { backgroundColor: theme.homeSection }]}>
-          <Text style={[styles.summaryLabel, { color: theme.homeMuted }]}>当日支出</Text>
-          <Text style={[styles.summaryValue, { color: theme.expense }]}>{selectedSummary.expense.toFixed(2)}</Text>
-        </View>
-        <View style={[styles.summaryCard, { backgroundColor: theme.homeBlueSoft }]}>
-          <Text style={[styles.summaryLabel, { color: theme.homeMuted }]}>当日收入</Text>
-          <Text style={[styles.summaryValue, { color: theme.income }]}>{selectedSummary.income.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      <RecordSectionHeader title={sections.title} total={sections.total} />
+      <RecordSectionHeader title={sections.title} total={sections.total} compact />
 
       <FlatList
         data={dayRecords}
@@ -532,79 +517,77 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 14,
+    alignItems: 'center',
+    minHeight: 44,
+    paddingTop: 6,
+    paddingBottom: 12,
+    zIndex: 1,
   },
-  headerTitleWrap: {
-    flex: 1,
-    paddingRight: 12,
+  headerLedgerButtonWrap: {
+    maxWidth: 196,
+    justifyContent: 'center',
   },
-  headerEyebrow: {
-    fontSize: Typography.size.caption,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 6,
+  headerLedgerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 0,
+    borderRadius: 999,
   },
-  headerTitle: {
-    fontSize: 34,
-    lineHeight: 38,
-    fontWeight: '900',
-    letterSpacing: -1,
+  headerLedgerName: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '800',
+    maxWidth: 132,
   },
-  todayButton: {
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  monthPickerCenter: {
+    position: 'absolute',
+    top: 6,
+    bottom: 12,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 999,
+    height: 44,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginTop: 6,
+    paddingVertical: 0,
+    borderRadius: 999,
+    maxWidth: 180,
   },
-  todayButtonText: {
-    fontSize: Typography.size.label,
-    fontWeight: '700',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 14,
-  },
-  headerChip: {
-    flex: 1,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  headerChipMonth: {
-    flex: 0.86,
-  },
-  headerChipLabel: {
-    fontSize: Typography.size.caption,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  headerChipValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  headerChipValue: {
-    flex: 1,
+  monthPillText: {
     fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
     fontWeight: '800',
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   calendarShell: {
     borderRadius: 30,
     paddingHorizontal: CALENDAR_SHELL_HORIZONTAL_PADDING,
     paddingTop: 10,
     paddingBottom: 12,
-    shadowColor: '#A9B66D',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    elevation: 4,
+    marginBottom: 4,
   },
   weekdayHeader: {
     flexDirection: 'row',
@@ -628,24 +611,24 @@ const styles = StyleSheet.create({
   },
   dayContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    paddingBottom: 8,
     borderRadius: 16,
   },
   dateCircle: {
-    minWidth: 26,
-    height: 26,
-    borderRadius: 13,
+    minWidth: 22,
+    borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
-    marginBottom: 4,
   },
   dateText: {
     fontSize: Typography.size.label,
     fontWeight: '800',
   },
   dayInfoSlot: {
-    minHeight: 16,
+    minHeight: 14,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 2,
@@ -656,28 +639,8 @@ const styles = StyleSheet.create({
     lineHeight: Typography.lineHeight.micro,
     textAlign: 'center',
   },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 14,
-    marginBottom: 6,
-  },
-  summaryCard: {
-    flex: 1,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  summaryLabel: {
-    fontSize: Typography.size.caption,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  summaryValue: {
-    fontSize: Typography.size.title,
-    fontWeight: '800',
-  },
   listContent: {
+    paddingTop: 2,
     paddingBottom: 132,
   },
   emptyContainer: {

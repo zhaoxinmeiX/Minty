@@ -435,10 +435,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 44,
   },
   headerLedgerButtonWrap: {
     maxWidth: 196,
-    alignSelf: 'flex-start',
+    justifyContent: 'center',
   },
   headerIcons: {
     flexDirection: 'row',
@@ -460,10 +461,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    height: 44,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 0,
     borderRadius: 999,
-    alignSelf: 'flex-start',
   },
   headerLedgerName: {
     fontSize: Typography.size.body,

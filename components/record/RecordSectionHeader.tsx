@@ -6,16 +6,18 @@ import { StyleSheet, Text, View } from 'react-native';
 interface RecordSectionHeaderProps {
   title: string;
   total: number;
+  compact?: boolean;
 }
 
-export function RecordSectionHeader({ title, total }: RecordSectionHeaderProps) {
+export function RecordSectionHeader({ title, total, compact = false }: RecordSectionHeaderProps) {
   const theme = Colors.light;
 
   return (
     <View
       style={[
         styles.sectionHeaderContainer,
-        {
+        compact ? styles.sectionHeaderContainerCompact : styles.sectionHeaderContainerDefault,
+        !compact && {
           backgroundColor: theme.homeSection,
           borderColor: 'rgba(110, 125, 66, 0.08)',
         },
@@ -24,9 +26,13 @@ export function RecordSectionHeader({ title, total }: RecordSectionHeaderProps) 
       <View style={[styles.sectionAccentDot, { backgroundColor: theme.homeAccent }]} />
       <View style={styles.sectionHeaderContent}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
-        <View style={[styles.sectionTotalPill, { backgroundColor: theme.homeSurface }]}>
-          <Text style={[styles.sectionTotal, { color: theme.homeOlive }]}>支 {total.toFixed(2)}</Text>
-        </View>
+        {compact ? (
+          <Text style={[styles.sectionTotalCompact, { color: theme.homeOlive }]}>支 {total.toFixed(2)}</Text>
+        ) : (
+          <View style={[styles.sectionTotalPill, { backgroundColor: theme.homeSurface }]}>
+            <Text style={[styles.sectionTotal, { color: theme.homeOlive }]}>支 {total.toFixed(2)}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -36,6 +42,8 @@ const styles = StyleSheet.create({
   sectionHeaderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  sectionHeaderContainerDefault: {
     marginHorizontal: 16,
     marginTop: 14,
     marginBottom: 8,
@@ -50,6 +58,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 14,
     elevation: 1,
+  },
+  sectionHeaderContainerCompact: {
+    marginHorizontal: 0,
+    marginTop: 10,
+    marginBottom: 4,
+    minHeight: 32,
+    paddingVertical: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
   },
   sectionAccentDot: {
     width: 10,
@@ -75,5 +92,10 @@ const styles = StyleSheet.create({
   sectionTotal: {
     fontSize: Typography.size.label,
     fontWeight: '600',
+  },
+  sectionTotalCompact: {
+    fontSize: Typography.size.label,
+    lineHeight: Typography.lineHeight.label,
+    fontWeight: '700',
   },
 });

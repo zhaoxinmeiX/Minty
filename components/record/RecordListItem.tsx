@@ -12,6 +12,7 @@ interface RecordListItemProps {
   showTime?: boolean;
   showDateBadge?: boolean;
   reserveDateBadgeSpace?: boolean;
+  compact?: boolean;
 }
 
 export function RecordListItem({
@@ -20,6 +21,7 @@ export function RecordListItem({
   showTime = false,
   showDateBadge = false,
   reserveDateBadgeSpace = false,
+  compact = false,
 }: RecordListItemProps) {
   const theme = Colors.light;
   const [datePart, timePart] = item.created_at.split(' ');
@@ -39,9 +41,10 @@ export function RecordListItem({
     <Pressable
       style={[
         styles.recordItem,
+        compact && styles.recordItemCompact,
         {
           backgroundColor: theme.homeSurface,
-          borderColor: 'rgba(110, 125, 66, 0.08)',
+          borderColor: compact ? 'transparent' : 'rgba(110, 125, 66, 0.08)',
         },
       ]}
       onPress={() => onPress(item)}
@@ -109,6 +112,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 14,
     elevation: 2,
+  },
+  recordItemCompact: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginHorizontal: 0,
+    borderRadius: 20,
+    borderWidth: 0,
+    marginBottom: 8,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   dateBadge: {
     width: 42,
