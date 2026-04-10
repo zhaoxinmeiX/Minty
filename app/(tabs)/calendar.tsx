@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { BarChart3, Calendar as CalendarIcon, ChevronDown } from 'lucide-react-native';
+import { Calendar as CalendarIcon, ChevronDown } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { CalendarList, DateData } from 'react-native-calendars';
@@ -212,9 +212,6 @@ export default function CalendarScreen() {
               <CalendarIcon size={24} color={theme.tabIconDefault} />
               <Text style={[styles.todayChar, { color: theme.tabIconDefault }]}>今</Text>
             </View>
-          </Pressable>
-          <Pressable onPress={() => router.push('/stats')} style={styles.actionIcon}>
-            <BarChart3 size={24} color={theme.tabIconDefault} />
           </Pressable>
         </View>
       </View>

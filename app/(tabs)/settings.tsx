@@ -122,96 +122,100 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
-      <Text style={[styles.headerTitle, { color: theme.text }]}>设置</Text>
-
-      {/* Profile Section */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>个人资料</Text>
-        <Pressable style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={handleEditNickname}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconWrapper, { backgroundColor: theme.tint + '15' }]}>
-              <User size={22} color={theme.tint} />
-            </View>
-            <View style={styles.cardInfo}>
-              <Text style={[styles.cardTitle, { color: theme.text }]}>我的昵称</Text>
-              <Text style={[styles.cardValue, { color: theme.tabIconDefault }]}>{nickname}</Text>
-            </View>
-            <ChevronRight size={20} color={theme.tabIconDefault} />
-          </View>
-        </Pressable>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.fixedHeader, { backgroundColor: theme.background }]}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>设置</Text>
       </View>
 
-      {/* Data Management Section */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>数据管理</Text>
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border, padding: 0 }]}>
-          <Pressable style={styles.listItem} onPress={handleImport}>
-            <View style={[styles.iconWrapper, { backgroundColor: theme.income + '15' }]}>
-              <FileDown size={20} color={theme.income} />
-            </View>
-            <Text style={[styles.listText, { color: theme.text }]}>导入数据 (Excel)</Text>
-            <ChevronRight size={20} color={theme.tabIconDefault} />
-          </Pressable>
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <Pressable style={styles.listItem} onPress={handleExport}>
-            <View style={[styles.iconWrapper, { backgroundColor: theme.tint + '15' }]}>
-              <FileUp size={20} color={theme.tint} />
-            </View>
-            <Text style={[styles.listText, { color: theme.text }]}>导出数据 (Excel)</Text>
-            <ChevronRight size={20} color={theme.tabIconDefault} />
-          </Pressable>
-        </View>
-        <Text style={[styles.sectionHint, { color: theme.tabIconDefault }]}>导入导出将针对当前选中的账本：{activeLedger?.name || '默认账本'}</Text>
-      </View>
-
-      {/* Ledger Management Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>账本管理</Text>
-        </View>
-
-        {/* Create Ledger */}
-        <View style={[styles.createContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <TextInput
-            style={[styles.input, { color: theme.text }]}
-            placeholder="新建账本名称..."
-            placeholderTextColor={theme.tabIconDefault}
-            value={newLedgerName}
-            onChangeText={setNewLedgerName}
-          />
-          <Pressable style={[styles.createBtn, { backgroundColor: theme.tint }]} onPress={handleCreateLedger}>
-            <Plus size={20} color="#000" />
-          </Pressable>
-        </View>
-
-        {ledgers.map((item) => (
-          <View
-            key={item.id}
-            style={[styles.ledgerCard, { backgroundColor: theme.card, borderColor: theme.border }, activeLedgerId === item.id && { borderColor: theme.tint, borderWidth: 1.5 }]}
-          >
-            <Pressable style={styles.ledgerInfo} onPress={() => setActiveLedgerId(item.id)}>
-              <View style={styles.radioContainer}>
-                {activeLedgerId === item.id ? <CheckCircle2 size={24} color={theme.tint} /> : <Circle size={24} color={theme.tabIconDefault} />}
+      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.content}>
+        {/* Profile Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>个人资料</Text>
+          <Pressable style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={handleEditNickname}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconWrapper, { backgroundColor: theme.tint + '15' }]}>
+                <User size={22} color={theme.tint} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.ledgerName, { color: theme.text }]}>{item.name}</Text>
-                <Text style={styles.ledgerDate}>创建于 {(parseISODate(item.created_at) ?? new Date(item.created_at)).toLocaleDateString()}</Text>
+              <View style={styles.cardInfo}>
+                <Text style={[styles.cardTitle, { color: theme.text }]}>我的昵称</Text>
+                <Text style={[styles.cardValue, { color: theme.tabIconDefault }]}>{nickname}</Text>
               </View>
+              <ChevronRight size={20} color={theme.tabIconDefault} />
+            </View>
+          </Pressable>
+        </View>
+
+        {/* Data Management Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>数据管理</Text>
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border, padding: 0 }]}>
+            <Pressable style={styles.listItem} onPress={handleImport}>
+              <View style={[styles.iconWrapper, { backgroundColor: theme.income + '15' }]}>
+                <FileDown size={20} color={theme.income} />
+              </View>
+              <Text style={[styles.listText, { color: theme.text }]}>导入数据 (Excel)</Text>
+              <ChevronRight size={20} color={theme.tabIconDefault} />
             </Pressable>
-
-            <View style={styles.ledgerActions}>
-              <Pressable onPress={() => handleEditLedger(item)} style={styles.iconBtn}>
-                <Edit3 size={18} color={theme.tabIconDefault} />
-              </Pressable>
-              <Pressable onPress={() => handleDeleteLedger(item)} style={styles.iconBtn}>
-                <Trash2 size={18} color={theme.expense} />
-              </Pressable>
-            </View>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <Pressable style={styles.listItem} onPress={handleExport}>
+              <View style={[styles.iconWrapper, { backgroundColor: theme.tint + '15' }]}>
+                <FileUp size={20} color={theme.tint} />
+              </View>
+              <Text style={[styles.listText, { color: theme.text }]}>导出数据 (Excel)</Text>
+              <ChevronRight size={20} color={theme.tabIconDefault} />
+            </Pressable>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+          <Text style={[styles.sectionHint, { color: theme.tabIconDefault }]}>导入导出将针对当前选中的账本：{activeLedger?.name || '默认账本'}</Text>
+        </View>
+
+        {/* Ledger Management Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionLabel, { color: theme.tabIconDefault }]}>账本管理</Text>
+          </View>
+
+          {/* Create Ledger */}
+          <View style={[styles.createContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <TextInput
+              style={[styles.input, { color: theme.text }]}
+              placeholder="新建账本名称..."
+              placeholderTextColor={theme.tabIconDefault}
+              value={newLedgerName}
+              onChangeText={setNewLedgerName}
+            />
+            <Pressable style={[styles.createBtn, { backgroundColor: theme.tint }]} onPress={handleCreateLedger}>
+              <Plus size={20} color="#000" />
+            </Pressable>
+          </View>
+
+          {ledgers.map((item) => (
+            <View
+              key={item.id}
+              style={[styles.ledgerCard, { backgroundColor: theme.card, borderColor: theme.border }, activeLedgerId === item.id && { borderColor: theme.tint, borderWidth: 1.5 }]}
+            >
+              <Pressable style={styles.ledgerInfo} onPress={() => setActiveLedgerId(item.id)}>
+                <View style={styles.radioContainer}>
+                  {activeLedgerId === item.id ? <CheckCircle2 size={24} color={theme.tint} /> : <Circle size={24} color={theme.tabIconDefault} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.ledgerName, { color: theme.text }]}>{item.name}</Text>
+                  <Text style={styles.ledgerDate}>创建于 {(parseISODate(item.created_at) ?? new Date(item.created_at)).toLocaleDateString()}</Text>
+                </View>
+              </Pressable>
+
+              <View style={styles.ledgerActions}>
+                <Pressable onPress={() => handleEditLedger(item)} style={styles.iconBtn}>
+                  <Edit3 size={18} color={theme.tabIconDefault} />
+                </Pressable>
+                <Pressable onPress={() => handleDeleteLedger(item)} style={styles.iconBtn}>
+                  <Trash2 size={18} color={theme.expense} />
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -219,15 +223,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    padding: 20,
+  fixedHeader: {
+    paddingHorizontal: 20,
     paddingTop: 60,
+    paddingBottom: 12,
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   headerTitle: {
     fontSize: Typography.size.title,
     fontWeight: 'bold',
-    marginBottom: 24,
   },
   section: {
     marginBottom: 32,

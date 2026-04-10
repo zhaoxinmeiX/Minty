@@ -114,24 +114,8 @@ export default function RecordsScreen() {
     router.push('/search');
   };
 
-  const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      {/* Top Ledger Selection Row */}
-      <View style={styles.topHeader}>
-        <Pressable style={styles.ledgerSelector} onPress={() => setIsLedgerModalVisible(true)}>
-          <Text style={[styles.ledgerName, { color: theme.text }]}>{activeLedger?.name || '家庭账本'}</Text>
-          <ChevronRight size={18} color={theme.text} strokeWidth={2.5} />
-        </Pressable>
-        <View style={styles.headerIcons}>
-          <Pressable style={styles.iconButton} onPress={openSearchPage}>
-            <Search size={22} color="#333" />
-          </Pressable>
-          <Pressable style={styles.iconButton} onPress={openBills}>
-            <FileText size={22} color="#333" />
-          </Pressable>
-        </View>
-      </View>
-
+  const renderListHeader = () => (
+    <View style={styles.listHeaderContainer}>
       {/* Monthly Spending Card */}
       <View style={[styles.summaryCard, { backgroundColor: '#FFD89B' }]}>
         <View style={styles.cardHeader}>
@@ -165,10 +149,27 @@ export default function RecordsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={styles.fixedHeader}>
+        <View style={styles.topHeader}>
+          <Pressable style={styles.ledgerSelector} onPress={() => setIsLedgerModalVisible(true)}>
+            <Text style={[styles.ledgerName, { color: theme.text }]}>{activeLedger?.name || '家庭账本'}</Text>
+            <ChevronRight size={18} color={theme.text} strokeWidth={2.5} />
+          </Pressable>
+          <View style={styles.headerIcons}>
+            <Pressable style={styles.iconButton} onPress={openSearchPage}>
+              <Search size={22} color="#333" />
+            </Pressable>
+            <Pressable style={styles.iconButton} onPress={openBills}>
+              <FileText size={22} color="#333" />
+            </Pressable>
+          </View>
+        </View>
+      </View>
+
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderListHeader}
         contentContainerStyle={styles.listContent}
         stickySectionHeadersEnabled={false}
         renderSectionHeader={({ section }) => <RecordSectionHeader title={section.title} total={section.total} />}
@@ -214,9 +215,10 @@ export default function RecordsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  fixedHeader: { paddingHorizontal: 16, paddingTop: 60, paddingBottom: 10 },
   listContent: { paddingBottom: 40 },
-  headerContainer: { paddingHorizontal: 16, paddingTop: 60, paddingBottom: 10 },
-  topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  listHeaderContainer: { paddingHorizontal: 16 },
+  topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   ledgerSelector: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   ledgerName: { fontSize: Typography.size.title, fontWeight: 'bold' },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 16 },
