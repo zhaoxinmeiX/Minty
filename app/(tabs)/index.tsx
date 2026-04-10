@@ -3,12 +3,11 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ChevronRight, FileText, Plus, Search } from 'lucide-react-native';
 import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, InteractionManager, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { RecordListItem } from '@/components/record/RecordListItem';
-import { RecordSectionHeader } from '@/components/record/RecordSectionHeader';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { getMonthlyExpenseTotalAsync } from '@/src/db/operations';
@@ -23,6 +22,12 @@ type HomeLaunchSnapshot = {
   ledgers: Ledger[];
   records: RecordItem[];
   monthTotalExpense: number;
+};
+
+type HomeSection = {
+  title: string;
+  total: number;
+  data: RecordItem[];
 };
 
 const areLedgersSynced = (left: Ledger[], right: Ledger[]) =>
@@ -170,7 +175,7 @@ export default function RecordsScreen() {
     }, [dataVersion, fetchLedgers, fetchMonthSummary, fetchRecords, setSelectedDateContext, setLastTab]),
   );
 
-  const sections = useMemo(() => {
+  const sections = useMemo<HomeSection[]>(() => {
     const groups = new Map<string, { records: RecordItem[]; total: number }>();
     const todayValue = new Date();
     const todayStr = `${todayValue.getFullYear()}年${todayValue.getMonth() + 1}月${todayValue.getDate()}日`;
@@ -323,6 +328,44 @@ export default function RecordsScreen() {
     </View>
   );
 
+  const renderSection = ({ item: section }: { item: HomeSection }) => (
+    <View style={styles.sectionBlock}>
+      <View style={styles.sectionMetaRow}>
+        <View style={styles.sectionMetaLeft}>
+          <View style={[styles.sectionMetaDot, { backgroundColor: theme.homeAccent }]} />
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{section.title}</Text>
+          <View style={[styles.sectionCountPill, { backgroundColor: 'rgba(110, 125, 66, 0.08)' }]}>
+            <Text style={[styles.sectionCountText, { color: theme.homeMuted }]}>{section.data.length} 笔</Text>
+          </View>
+        </View>
+        <Text style={[styles.sectionTotalText, { color: theme.homeOlive }]}>支 {formatAmount(section.total)}</Text>
+      </View>
+
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: theme.homeSurface,
+            borderColor: 'rgba(110, 125, 66, 0.08)',
+          },
+        ]}
+      >
+        {section.data.map((record, index) => (
+          <RecordListItem
+            key={record.id}
+            item={record}
+            variant="flat"
+            showDivider={index < section.data.length - 1}
+            onPress={(selected) => {
+              setSelectedRecord(selected);
+              setIsDetailVisible(true);
+            }}
+          />
+        ))}
+      </View>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
       <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.42)' }]} />
@@ -330,26 +373,16 @@ export default function RecordsScreen() {
 
       {renderFixedHeader()}
 
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id.toString()}
+      <FlatList
+        data={sections}
+        keyExtractor={(item) => item.title}
         ListHeaderComponent={renderListHeader}
         contentContainerStyle={styles.listContent}
-        stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={5}
-        renderSectionHeader={({ section }) => <RecordSectionHeader title={section.title} total={section.total} />}
-        renderItem={({ item }) => (
-          <RecordListItem
-            item={item}
-            onPress={(record) => {
-              setSelectedRecord(record);
-              setIsDetailVisible(true);
-            }}
-          />
-        )}
+        renderItem={renderSection}
         ListEmptyComponent={
           <View style={[styles.emptyContainer, { backgroundColor: theme.homeSurface }]}>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>这里还没有记录</Text>
@@ -414,6 +447,59 @@ const styles = StyleSheet.create({
   listHeaderContainer: {
     paddingHorizontal: 16,
     paddingBottom: 12,
+  },
+  sectionBlock: {
+    marginHorizontal: 16,
+    marginTop: 10,
+  },
+  sectionMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 10,
+    paddingHorizontal: 4,
+  },
+  sectionMetaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
+  },
+  sectionMetaDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  sectionTitle: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '800',
+  },
+  sectionCountPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  sectionCountText: {
+    fontSize: Typography.size.footnote,
+    lineHeight: Typography.lineHeight.footnote,
+    fontWeight: '700',
+  },
+  sectionTotalText: {
+    fontSize: Typography.size.label,
+    lineHeight: Typography.lineHeight.label,
+    fontWeight: '800',
+  },
+  sectionCard: {
+    borderRadius: 28,
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowColor: '#A9B66D',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 3,
   },
   screenGlow: {
     position: 'absolute',
