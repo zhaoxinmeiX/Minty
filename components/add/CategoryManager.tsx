@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { useCategories } from '@/src/hooks/useCategories';
 import { EditingCategory } from '@/src/types';
@@ -94,7 +95,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type,
 
           <Pressable style={[styles.addTreeBtn, { borderColor: accentColor }]} onPress={() => onEdit({ name: '', icon: 'LayoutGrid', parent_id: null })}>
             <Plus size={20} color={accentColor} />
-            <Text style={{ color: accentColor, fontWeight: 'bold', fontSize: 12 }}>增加主分类</Text>
+            <Text style={{ color: accentColor, fontWeight: 'bold', fontSize: Typography.size.body }}>增加主分类</Text>
           </Pressable>
         </ScrollView>
       </View>
@@ -105,12 +106,12 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type,
 const styles = StyleSheet.create({
   manageContainer: { flex: 1, paddingTop: 20 },
   manageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  manageTitle: { fontSize: 14, fontWeight: 'bold' },
+  manageTitle: { fontSize: Typography.size.title, fontWeight: 'bold' },
   treeRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 4 },
   subTreeRow: { marginLeft: 30, paddingVertical: 12 },
   treeExpander: { width: 30, height: 30, justifyContent: 'center', alignItems: 'center' },
   treeMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  treeText: { fontSize: 12, fontWeight: '500' },
+  treeText: { fontSize: Typography.size.body, fontWeight: '500' },
   treeActions: { flexDirection: 'row', gap: 16 },
   treeActionBtn: { padding: 4 },
   addTreeBtn: {

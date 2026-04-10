@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   yearNav: { padding: 8 },
-  yearLabel: { fontSize: 14, fontWeight: 'bold' },
+  yearLabel: { fontSize: Typography.size.title, fontWeight: 'bold' },
   monthGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -111,12 +112,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
   },
-  monthText: { fontSize: 13, fontWeight: '600' },
+  monthText: { fontSize: Typography.size.body, fontWeight: '600' },
   cancelBtn: {
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
   },
-  cancelText: { fontSize: 13, fontWeight: '500' },
+  cancelText: { fontSize: Typography.size.body, fontWeight: '500' },
 });

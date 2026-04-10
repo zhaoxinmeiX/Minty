@@ -9,6 +9,7 @@ import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { RecordListItem } from '@/components/record/RecordListItem';
 import { RecordSectionHeader } from '@/components/record/RecordSectionHeader';
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
 import { useRecords } from '@/src/hooks/useRecords';
@@ -155,7 +156,7 @@ export default function RecordsScreen() {
       <View style={styles.billListHeader}>
         <Text style={[styles.billListTitle, { color: theme.text }]}>近30天账单</Text>
         <Pressable style={styles.allBillsLink} onPress={openBills}>
-          <Text style={{ color: theme.tabIconDefault, fontSize: 12 }}>全部账单</Text>
+          <Text style={{ color: theme.tabIconDefault, fontSize: Typography.size.body }}>全部账单</Text>
           <ChevronRight size={14} color={theme.tabIconDefault} />
         </Pressable>
       </View>
@@ -182,7 +183,7 @@ export default function RecordsScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={{ color: theme.tabIconDefault, fontSize: 12 }}>这里空空如也，去记一笔吧</Text>
+            <Text style={{ color: theme.tabIconDefault, fontSize: Typography.size.body }}>这里空空如也，去记一笔吧</Text>
           </View>
         }
       />
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
   headerContainer: { paddingHorizontal: 16, paddingTop: 60, paddingBottom: 10 },
   topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   ledgerSelector: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  ledgerName: { fontSize: 14, fontWeight: 'bold' },
+  ledgerName: { fontSize: Typography.size.title, fontWeight: 'bold' },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   iconButton: { padding: 4 },
   summaryCard: {
@@ -231,14 +232,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   cardHeader: { marginBottom: 12 },
-  cardMonthText: { fontSize: 12, color: 'rgba(0,0,0,0.5)', fontWeight: '600' },
-  cardAmountDisplay: { fontSize: 24, fontWeight: 'bold', color: '#000', marginBottom: 20 },
+  cardMonthText: { fontSize: Typography.size.label, color: 'rgba(0,0,0,0.5)', fontWeight: '600' },
+  cardAmountDisplay: { fontSize: Typography.size.display, fontWeight: 'bold', color: '#000', marginBottom: 20 },
   cardFooter: { flexDirection: 'row', gap: 24 },
   footerStat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  footerLabel: { fontSize: 12, color: 'rgba(0,0,0,0.5)' },
-  footerValue: { fontSize: 12, fontWeight: '600', color: '#000' },
+  footerLabel: { fontSize: Typography.size.label, color: 'rgba(0,0,0,0.5)' },
+  footerValue: { fontSize: Typography.size.body, fontWeight: '600', color: '#000' },
   billListHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, marginBottom: 10 },
-  billListTitle: { fontSize: 14, fontWeight: 'bold' },
+  billListTitle: { fontSize: Typography.size.title, fontWeight: 'bold' },
   allBillsLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   emptyContainer: { padding: 100, alignItems: 'center' },
 });

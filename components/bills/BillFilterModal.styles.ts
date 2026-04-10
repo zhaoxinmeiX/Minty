@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { Typography } from '@/constants/Typography';
 
 export const styles = StyleSheet.create({
   filterPanel: {
@@ -38,13 +39,13 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   filterMainTitle: {
-    fontSize: 15,
+    fontSize: Typography.size.bodyLg,
     fontWeight: '800',
     color: '#111827',
   },
   filterHeaderHint: {
     marginTop: 2,
-    fontSize: 12,
+    fontSize: Typography.size.caption,
     color: '#9CA3AF',
   },
   filterCardBlock: {
@@ -54,7 +55,7 @@ export const styles = StyleSheet.create({
     borderColor: '#EDF1F5',
     padding: 12,
   },
-  filterTitle: { fontSize: 13, color: '#333', fontWeight: '600' },
+  filterTitle: { fontSize: Typography.size.label, color: '#333', fontWeight: '600' },
   filterBlockGap: { marginTop: 14 },
   rangeRow: {
     marginTop: 10,
@@ -71,10 +72,10 @@ export const styles = StyleSheet.create({
     borderColor: '#E8EBF0',
     paddingHorizontal: 12,
     color: '#111827',
-    fontSize: 12,
+    fontSize: Typography.size.body,
   },
-  rangeDivider: { color: '#6B7280', fontSize: 12 },
-  helperText: { marginTop: 8, color: '#9CA3AF', fontSize: 12 },
+  rangeDivider: { color: '#6B7280', fontSize: Typography.size.caption },
+  helperText: { marginTop: 8, color: '#9CA3AF', fontSize: Typography.size.caption },
 
   typeWrap: {
     marginTop: 10,
@@ -97,7 +98,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FFF4DB',
     borderColor: '#F8D58E',
   },
-  typeChipText: { color: '#6B7280', fontSize: 12, fontWeight: '600' },
+  typeChipText: { color: '#6B7280', fontSize: Typography.size.body, fontWeight: '600' },
   typeChipTextActive: { color: '#C78500' },
 
   filterRow: {
@@ -112,7 +113,7 @@ export const styles = StyleSheet.create({
     minHeight: 52,
   },
   filterRowRight: { flexDirection: 'row', alignItems: 'center' },
-  filterValue: { color: '#6B7280', fontSize: 12 },
+  filterValue: { color: '#6B7280', fontSize: Typography.size.body },
 
   filterActions: {
     marginTop: 14,
@@ -127,7 +128,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  resetText: { color: '#374151', fontSize: 13, fontWeight: '700' },
+  resetText: { color: '#374151', fontSize: Typography.size.label, fontWeight: '700' },
   confirmBtn: {
     flex: 1,
     height: 44,
@@ -136,7 +137,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  confirmText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  confirmText: { color: '#FFFFFF', fontSize: Typography.size.label, fontWeight: '700' },
 
   categoryList: {
     maxHeight: 340,
@@ -152,5 +153,5 @@ export const styles = StyleSheet.create({
     borderColor: '#EDF1F5',
     marginBottom: 8,
   },
-  categoryItemText: { fontSize: 12, color: '#111827', fontWeight: '500' },
+  categoryItemText: { fontSize: Typography.size.body, color: '#111827', fontWeight: '500' },
 });

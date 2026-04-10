@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getLunarLabel } from '@/src/utils/lunar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronRight as ChevronRightSmall } from 'lucide-react-native';
@@ -266,7 +267,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
                   theme={{
                     calendarBackground: 'transparent',
                     textSectionTitleColor: accentColor,
-                    textDayHeaderFontSize: 12,
+                    textDayHeaderFontSize: Typography.size.caption,
                     textDayHeaderFontWeight: '600',
                     // @ts-ignore
                     'stylesheet.calendar.main': {
@@ -317,7 +318,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  monthLabel: { fontSize: 12, fontWeight: '700' },
+  monthLabel: { fontSize: Typography.size.body, fontWeight: '700' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   navGroup: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   navBtn: { padding: 4 },
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
   todayChar: {
     position: 'absolute',
     bottom: 2,
-    fontSize: 9,
+    fontSize: Typography.size.micro,
     fontWeight: '900',
   },
   calendarWrapper: {
@@ -345,8 +346,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
   },
-  dayNumber: { fontSize: 12, fontWeight: '600', marginBottom: 2 },
-  lunarText: { fontSize: 10 },
+  dayNumber: { fontSize: Typography.size.body, fontWeight: '600', marginBottom: 2 },
+  lunarText: { fontSize: Typography.size.tiny },
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -364,8 +365,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
   },
-  timeBtnText: { fontSize: 12, fontWeight: '500' },
-  confirmBtnText: { fontSize: 12, fontWeight: '700' },
+  timeBtnText: { fontSize: Typography.size.body, fontWeight: '500' },
+  confirmBtnText: { fontSize: Typography.size.body, fontWeight: '700' },
   weekdayHeader: {
     flexDirection: 'row',
     paddingVertical: 10,
@@ -375,7 +376,7 @@ const styles = StyleSheet.create({
   weekdayText: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: Typography.size.caption,
     fontWeight: '700',
     color: '#999',
   },
@@ -397,7 +398,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   timePickerTitle: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '700',
   },
   backToDateBtn: {
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   backToDateText: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
   },
   monthGrid: {
@@ -424,7 +425,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.02)',
   },
   monthGridText: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
   },
 });

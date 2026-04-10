@@ -1,6 +1,7 @@
 import { ArrowLeft, ChevronDown, CircleX, Search, X } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Typography } from '@/constants/Typography';
 
 type Props = {
   searchOpen: boolean;
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerBtn: { padding: 8 },
-  headerTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  headerTitle: { fontSize: Typography.size.title, fontWeight: '700', color: '#111827' },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   headerSearchWrap: {
     flexDirection: 'row',
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchInput: { flex: 1, color: '#1F2937', fontSize: 12 },
+  searchInput: { flex: 1, color: '#1F2937', fontSize: Typography.size.body },
 
   toolbar: {
     flexDirection: 'row',
@@ -160,6 +161,6 @@ const styles = StyleSheet.create({
   toolbarChipRight: {
     marginLeft: 'auto',
   },
-  toolbarChipText: { fontSize: 12, color: '#374151', fontWeight: '500' },
+  toolbarChipText: { fontSize: Typography.size.body, color: '#374151', fontWeight: '500' },
   toolbarChipActiveText: { color: '#F59E0B' },
 });

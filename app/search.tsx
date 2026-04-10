@@ -7,6 +7,7 @@ import { Pressable, SafeAreaView, SectionList, StyleSheet, Text, TextInput, View
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { RecordListItem } from '@/components/record/RecordListItem';
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { deleteRecord, getRecordsForBillList } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: '#111827',
-    fontSize: 12,
+    fontSize: Typography.size.body,
   },
   closeBtn: {
     width: 32,
@@ -192,12 +193,12 @@ const styles = StyleSheet.create({
   },
   countText: {
     color: '#6B7280',
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
   },
   expenseText: {
     color: '#DC2626',
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '700',
   },
   listContent: {
@@ -215,18 +216,18 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#374151',
-    fontSize: 12,
+    fontSize: Typography.size.label,
     fontWeight: '700',
   },
   sectionTotal: {
     color: '#6B7280',
-    fontSize: 12,
+    fontSize: Typography.size.label,
     fontWeight: '700',
   },
   emptyText: {
     marginTop: 120,
     textAlign: 'center',
     color: '#9CA3AF',
-    fontSize: 12,
+    fontSize: Typography.size.body,
   },
 });

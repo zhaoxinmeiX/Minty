@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { Category } from '@/src/db/schema';
 import React from 'react';
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   catLabel: {
-    fontSize: 12,
+    fontSize: Typography.size.caption,
     marginTop: 0,
     textAlign: 'center',
   },

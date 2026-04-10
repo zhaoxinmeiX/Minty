@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { Book, Calendar } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -69,15 +70,15 @@ const styles = StyleSheet.create({
   },
   noteInput: {
     flex: 1,
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '400',
   },
   amountDisplay: {
-    fontSize: 20,
+    fontSize: Typography.size.headline,
     fontWeight: 'bold',
   },
   expressionDisplay: {
-    fontSize: 12,
+    fontSize: Typography.size.caption,
     marginTop: -2,
   },
   pillRow: {
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   pillText: {
-    fontSize: 12,
+    fontSize: Typography.size.caption,
     fontWeight: '600',
   },
 });

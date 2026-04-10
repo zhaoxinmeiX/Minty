@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getIconComponent, SELECTABLE_ICONS } from '@/src/constants/icons';
 import { EditingCategory } from '@/src/types';
 import React from 'react';
@@ -48,10 +49,10 @@ export const CategoryEditModal: React.FC<CategoryEditModalProps> = ({ visible, e
 
           <View style={styles.editFooter}>
             <Pressable style={styles.editCancel} onPress={onCancel}>
-              <Text style={{ color: theme.tabIconDefault, fontSize: 12 }}>取消</Text>
+              <Text style={{ color: theme.tabIconDefault, fontSize: Typography.size.body }}>取消</Text>
             </Pressable>
             <Pressable style={[styles.editConfirm, { backgroundColor: accentColor }]} onPress={onSave}>
-              <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>保存</Text>
+              <Text style={{ color: '#000', fontWeight: 'bold', fontSize: Typography.size.body }}>保存</Text>
             </Pressable>
           </View>
         </View>
@@ -63,8 +64,8 @@ export const CategoryEditModal: React.FC<CategoryEditModalProps> = ({ visible, e
 const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   editBox: { width: '80%', padding: 20, borderRadius: 24 },
-  editTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 20 },
-  editInput: { fontSize: 12, paddingVertical: 8, borderBottomWidth: 1, marginBottom: 20 },
+  editTitle: { fontSize: Typography.size.title, fontWeight: 'bold', marginBottom: 20 },
+  editInput: { fontSize: Typography.size.body, paddingVertical: 8, borderBottomWidth: 1, marginBottom: 20 },
   iconChoice: { width: 50, height: 50, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   editFooter: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 10 },
   editCancel: { padding: 12 },

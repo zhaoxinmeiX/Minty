@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Typography } from '@/constants/Typography';
 import { ExternalLink } from './ExternalLink';
 
 export default function EditScreenInfo({ path }: { path: string }) {
@@ -39,7 +40,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.05)',
   },
   getStartedText: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     lineHeight: 24,
     textAlign: 'center',
   },

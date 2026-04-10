@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet } from 'react-native';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
+import { Typography } from '@/constants/Typography';
 import { Text, View } from 'react-native';
 
 export default function ModalScreen() {
@@ -25,7 +26,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDFDFB',
   },
   title: {
-    fontSize: 12,
+    fontSize: Typography.size.title,
     fontWeight: 'bold',
   },
   separator: {

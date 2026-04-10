@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { Calculator, Delete, Reply } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -70,7 +71,7 @@ export const NumericPad: React.FC<NumericPadProps> = ({ onPress, onClear, onDele
           {renderButton('0', () => onPress('0'))}
           {renderButton(<Delete size={20} color={theme.text} />, onDelete)}
           {renderButton('-', () => onPress('-'))}
-          {renderButton('保存', onSave, { bg: accentColor, color: '#000', fontSize: 18 })}
+          {renderButton('保存', onSave, { bg: accentColor, color: '#000', fontSize: Typography.size.titleLg })}
         </View>
       </View>
     );
@@ -98,7 +99,7 @@ export const NumericPad: React.FC<NumericPadProps> = ({ onPress, onClear, onDele
             {renderButton('9', () => onPress('9'))}
           </View>
           <View style={styles.innerRow}>
-            {renderButton('再记', onAddAnother, { fontSize: 16 })}
+            {renderButton('再记', onAddAnother, { fontSize: Typography.size.title })}
             {renderButton('0', () => onPress('0'))}
             {renderButton('.', () => onPress('.'))}
           </View>
@@ -129,6 +130,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  btnText: { fontSize: 18, fontWeight: '600' },
-  saveBtnText: { fontSize: 18, fontWeight: 'bold', color: '#ffffff' },
+  btnText: { fontSize: Typography.size.titleLg, fontWeight: '600' },
+  saveBtnText: { fontSize: Typography.size.titleLg, fontWeight: 'bold', color: '#ffffff' },
 });

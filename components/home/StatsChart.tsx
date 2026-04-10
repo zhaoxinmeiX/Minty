@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { RecordItem } from '@/src/db/schema';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
@@ -18,7 +19,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ records, type }) => {
   if (filtered.length === 0) {
     return (
       <View style={[styles.emptyChart, { backgroundColor: theme.card }]}>
-        <Text style={{ color: theme.tabIconDefault, fontSize: 12 }}>暂无数据</Text>
+        <Text style={{ color: theme.tabIconDefault, fontSize: Typography.size.body }}>暂无数据</Text>
       </View>
     );
   }
@@ -35,7 +36,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ records, type }) => {
       population: amount,
       color: `rgba(${(index * 70) % 200}, ${(index * 40 + 100) % 255}, ${(index * 90 + 50) % 255}, 1)`,
       legendFontColor: theme.text,
-      legendFontSize: 12,
+      legendFontSize: Typography.size.caption,
     }))
     .sort((a, b) => b.population - a.population)
     .slice(0, 5); // Show top 5
@@ -61,6 +62,6 @@ export const StatsChart: React.FC<StatsChartProps> = ({ records, type }) => {
 
 const styles = StyleSheet.create({
   container: { margin: 16, borderRadius: 24, padding: 16 },
-  title: { fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
+  title: { fontSize: Typography.size.title, fontWeight: 'bold', marginBottom: 10 },
   emptyChart: { height: 150, margin: 16, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
 });

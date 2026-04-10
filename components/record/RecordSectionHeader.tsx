@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -53,11 +54,11 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '700',
   },
   sectionTotal: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
   },
 });

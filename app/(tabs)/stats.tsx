@@ -6,6 +6,7 @@ import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react
 
 import { StatsDonutChart } from '@/components/stats/StatsDonutChart';
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { CategoryStat, TimeRange, useStatsScreen } from '@/src/hooks/useStatsScreen';
 import { useStore } from '@/src/store';
@@ -156,7 +157,7 @@ export default function StatsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyList}>
-            <Text style={{ color: theme.tabIconDefault, fontSize: 12 }}>暂无统计数据</Text>
+            <Text style={{ color: theme.tabIconDefault, fontSize: Typography.size.body }}>暂无统计数据</Text>
           </View>
         }
       />
@@ -168,14 +169,14 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   rangeBar: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12 },
   rangeBtn: { paddingVertical: 4, paddingHorizontal: 16, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  rangeText: { fontSize: 14, fontWeight: '600' },
+  rangeText: { fontSize: Typography.size.title, fontWeight: '600' },
   dateNav: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20, marginVertical: 10 },
-  currentDateText: { fontSize: 13, fontWeight: '700' },
+  currentDateText: { fontSize: Typography.size.body, fontWeight: '700' },
   typeSwitcher: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginVertical: 16 },
   typeBtn: { paddingVertical: 6, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'transparent' },
-  typeText: { fontSize: 13, fontWeight: 'bold' },
+  typeText: { fontSize: Typography.size.body, fontWeight: 'bold' },
   chartContainer: { alignItems: 'center', paddingVertical: 0 },
-  rankingTitle: { alignSelf: 'flex-start', marginHorizontal: 20, marginTop: 12, fontSize: 14, fontWeight: 'bold' },
+  rankingTitle: { alignSelf: 'flex-start', marginHorizontal: 20, marginTop: 12, fontSize: Typography.size.title, fontWeight: 'bold' },
   listContent: { paddingBottom: 24 },
   rankingItem: {
     flexDirection: 'row',
@@ -187,8 +188,8 @@ const styles = StyleSheet.create({
   },
   rankingLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconBox: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  rankingName: { fontSize: 12, fontWeight: '600', marginBottom: 1 },
-  rankingCount: { fontSize: 11 },
-  rankingAmount: { fontSize: 13, fontWeight: '700' },
+  rankingName: { fontSize: Typography.size.body, fontWeight: '600', marginBottom: 1 },
+  rankingCount: { fontSize: Typography.size.caption },
+  rankingAmount: { fontSize: Typography.size.body, fontWeight: '700' },
   emptyList: { padding: 40, alignItems: 'center' },
 });

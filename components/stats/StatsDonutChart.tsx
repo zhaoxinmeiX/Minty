@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
+import { Typography } from '@/constants/Typography';
 import { SegmentGeometry } from '@/src/hooks/useStatsScreen';
 
 type Props = {
@@ -47,7 +48,7 @@ export function StatsDonutChart({ size, center, outerRadius, innerRadius, backgr
               {segments.length > 1 && <Path d={segment.path} fill={segment.color} onPress={() => onSegmentPress(segment.categoryId)} />}
               <Line x1={segment.lineStart.x} y1={segment.lineStart.y} x2={segment.lineTurn.x} y2={segment.lineTurn.y} stroke={segment.color} strokeWidth={2} />
               <Line x1={segment.lineTurn.x} y1={segment.lineTurn.y} x2={segment.lineEnd.x} y2={segment.lineEnd.y} stroke={segment.color} strokeWidth={2} />
-              <SvgText x={segment.textX} y={segment.textY} fontSize="12" fontWeight="700" fill={segment.color} textAnchor={segment.textAnchor}>
+              <SvgText x={segment.textX} y={segment.textY} fontSize={String(Typography.size.caption)} fontWeight="700" fill={segment.color} textAnchor={segment.textAnchor}>
                 {`${segment.name} ${segment.percentage.toFixed(1)}%`}
               </SvgText>
             </React.Fragment>
@@ -77,8 +78,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  totalLabel: { fontSize: 12, fontWeight: '600' },
-  totalValue: { fontSize: 18, fontWeight: '700', lineHeight: 38 },
+  totalLabel: { fontSize: Typography.size.body, fontWeight: '600' },
+  totalValue: { fontSize: Typography.size.titleLg, fontWeight: '700', lineHeight: 38 },
   emptyChart: { height: 200, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { color: '#6B7280', fontSize: 12 },
+  emptyText: { color: '#6B7280', fontSize: Typography.size.body },
 });

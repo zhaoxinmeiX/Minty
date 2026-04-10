@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { RecordItem } from '@/src/db/schema';
 import { parseISODate } from '@/src/utils/date';
@@ -168,12 +169,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryName: {
-    fontSize: 14,
+    fontSize: Typography.size.title,
     fontWeight: '700',
     marginBottom: 4,
   },
   amount: {
-    fontSize: 24,
+    fontSize: Typography.size.display,
     fontWeight: 'bold',
   },
   closeBtn: {
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   noteText: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
   },
   detailRow: {
     flexDirection: 'row',
@@ -194,10 +195,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
   },
   detailValue: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '500',
   },
   ledgerRow: {
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   actionText: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
   },
 });

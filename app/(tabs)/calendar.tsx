@@ -17,6 +17,7 @@ import { useLedgers } from '@/src/hooks/useLedgers';
 import { useStore } from '@/src/store';
 
 import { MonthPickerModal } from '@/components/calendar/MonthPickerModal';
+import { Typography } from '@/constants/Typography';
 import { getLunarLabel } from '@/src/utils/lunar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -285,7 +286,7 @@ export default function CalendarScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={{ color: theme.tabIconDefault, fontSize: 12 }}>这一天没有记账哦</Text>
+            <Text style={{ color: theme.tabIconDefault, fontSize: Typography.size.body }}>这一天没有记账哦</Text>
           </View>
         }
       />
@@ -358,9 +359,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   ledgerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  ledgerName: { fontSize: 13, fontWeight: '600' },
+  ledgerName: { fontSize: Typography.size.body, fontWeight: '600' },
   monthSelector: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  monthText: { fontSize: 14, fontWeight: '700' },
+  monthText: { fontSize: Typography.size.title, fontWeight: '700' },
   headerActions: { flexDirection: 'row', gap: 16 },
   actionIcon: { padding: 4 },
   calendar: { marginBottom: 4 },
@@ -383,12 +384,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 2,
   },
-  dateText: { fontSize: 12, fontWeight: '600' },
+  dateText: { fontSize: Typography.size.label, fontWeight: '600' },
   dayInfoSlot: { height: 14, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
-  dayExpenseText: { fontSize: 9, fontWeight: '600', color: '#444', lineHeight: 14, textAlign: 'center' },
+  dayExpenseText: { fontSize: Typography.size.micro, fontWeight: '600', color: '#444', lineHeight: Typography.lineHeight.micro, textAlign: 'center' },
   listContent: { paddingBottom: 40 },
   emptyContainer: { paddingTop: 60, alignItems: 'center' },
-  lunarTextMain: { fontSize: 9, fontWeight: '600', lineHeight: 14, textAlign: 'center' },
+  lunarTextMain: { fontSize: Typography.size.micro, fontWeight: '600', lineHeight: Typography.lineHeight.micro, textAlign: 'center' },
   calendarIconWrapper: {
     width: 24,
     height: 24,
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
   todayChar: {
     position: 'absolute',
     bottom: 2,
-    fontSize: 9,
+    fontSize: Typography.size.micro,
     fontWeight: '900',
   },
   weekdayHeader: {
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
   weekdayText: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: Typography.size.label,
     fontWeight: '700',
     color: '#999',
   },

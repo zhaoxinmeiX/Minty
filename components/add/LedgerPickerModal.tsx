@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { Ledger } from '@/src/db/schema';
 import { Check } from 'lucide-react-native';
 import React, { useEffect } from 'react';
@@ -52,7 +53,7 @@ export const LedgerPickerModal: React.FC<LedgerPickerModalProps> = ({ visible, l
           <Text style={[styles.manageTitle, { color: theme.text, marginBottom: 16 }]}>选择账本</Text>
           {ledgers.map((l) => (
             <Pressable key={l.id} onPress={() => onSelect(l.id)} style={styles.ledgerSelectRow}>
-              <Text style={{ color: theme.text, fontSize: 12, fontWeight: '500' }}>{l.name}</Text>
+              <Text style={{ color: theme.text, fontSize: Typography.size.body, fontWeight: '500' }}>{l.name}</Text>
               {activeLedgerId === l.id && <Check size={20} color={theme.tint} />}
             </Pressable>
           ))}
@@ -80,5 +81,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  manageTitle: { fontSize: 14, fontWeight: 'bold' },
+  manageTitle: { fontSize: Typography.size.title, fontWeight: 'bold' },
 });

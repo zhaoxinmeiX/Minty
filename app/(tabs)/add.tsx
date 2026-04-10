@@ -25,6 +25,7 @@ import { CategoryPopover } from '@/components/add/CategoryPopover';
 import { DateTimePickerModal } from '@/components/add/DateTimePickerModal';
 import { LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { NumericPad } from '@/components/add/NumericPad';
+import { Typography } from '@/constants/Typography';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const PAGE_BACKGROUND = '#FFFFFF';
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  segmentText: { fontSize: 12, fontWeight: '600' },
+  segmentText: { fontSize: Typography.size.body, fontWeight: '600' },
   categoryScroll: { flex: 1 },
   footer: {
     backgroundColor: 'transparent',

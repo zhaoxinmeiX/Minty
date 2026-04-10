@@ -5,6 +5,7 @@ import { View } from 'react-native';
 
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 
 export default function TabLayout() {
   const themeColors = Colors.light;
@@ -23,7 +24,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           marginTop: 6,
-          fontSize: 10,
+          fontSize: Typography.size.footnote,
           fontWeight: '500',
         },
         headerStyle: {

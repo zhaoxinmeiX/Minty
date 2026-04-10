@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { addLedger, deleteLedger, getLedgers, updateLedger } from '@/src/db/operations';
 import { Ledger } from '@/src/db/schema';
 import { useStore } from '@/src/store';
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headerTitle: {
-    fontSize: 12,
+    fontSize: Typography.size.title,
     fontWeight: 'bold',
     marginBottom: 24,
   },
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: Typography.size.label,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   sectionHint: {
-    fontSize: 12,
+    fontSize: Typography.size.label,
     marginTop: 8,
     marginLeft: 4,
   },
@@ -272,11 +273,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
   },
   cardValue: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     marginTop: 2,
   },
   listItem: {
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
   },
   listText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '500',
   },
   divider: {
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 44,
-    fontSize: 12,
+    fontSize: Typography.size.body,
   },
   createBtn: {
     width: 40,
@@ -332,12 +333,12 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   ledgerName: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
     marginBottom: 2,
   },
   ledgerDate: {
-    fontSize: 11,
+    fontSize: Typography.size.caption,
     color: '#888',
   },
   ledgerActions: {

@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { CategoryPopoverProps } from '@/src/types';
 import { LayoutGrid } from 'lucide-react-native';
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   bubbleText: {
-    fontSize: 10,
+    fontSize: Typography.size.tiny,
     textAlign: 'center',
   },
   bubbleScroll: {

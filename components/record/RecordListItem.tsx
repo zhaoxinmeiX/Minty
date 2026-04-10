@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { RecordItem } from '@/src/db/schema';
 import { parseDate } from '@/src/utils/date';
@@ -81,13 +82,13 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   dateDay: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
     fontWeight: '700',
   },
   dateMonth: {
-    fontSize: 10,
-    lineHeight: 14,
+    fontSize: Typography.size.tiny,
+    lineHeight: Typography.lineHeight.tiny,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -111,18 +112,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: '600',
   },
   noteText: {
-    fontSize: 11,
+    fontSize: Typography.size.caption,
     paddingRight: 12,
   },
   recordRight: {
     alignItems: 'flex-end',
   },
   amountText: {
-    fontSize: 12,
+    fontSize: Typography.size.body,
     fontWeight: 'bold',
   },
 });
