@@ -22,7 +22,7 @@ import { getLunarLabel } from '@/src/utils/lunar';
 
 const SCREEN_HORIZONTAL_PADDING = 16;
 const CALENDAR_SHELL_HORIZONTAL_PADDING = 10;
-const DAY_CELL_GAP = 2;
+const DAY_CELL_GAP = 4;
 const WEEK_ROW_GAP = 4;
 
 export default function CalendarScreen() {
@@ -213,7 +213,7 @@ export default function CalendarScreen() {
 
     const monthStart = dayjs(`${currentMonth}-01`);
     const weeksInMonth = monthStart.isValid() ? Math.ceil((monthStart.day() + monthStart.daysInMonth()) / 7) : 6;
-    const resolvedCalendarBodyHeight = weeksInMonth * (resolvedDayCellSize + WEEK_ROW_GAP);
+    const resolvedCalendarBodyHeight = weeksInMonth * (resolvedDayCellSize + WEEK_ROW_GAP) + 2;
 
     return {
       calendarWidth: resolvedCalendarWidth,

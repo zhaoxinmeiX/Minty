@@ -158,6 +158,12 @@ export type BillListPageResult = {
   nextCursor: BillListCursor | null;
 };
 
+export type BillListMonthSummary = {
+  yearMonth: string;
+  recordCount: number;
+  expenseTotal: number;
+};
+
 export type BillListCategoryOption = {
   category_id: number;
   category: string;
@@ -171,6 +177,7 @@ type RecordUpdateData = RecordMutationBase & { created_at: string };
 type BillListQueryBuildOptions = {
   cursor?: BillListCursor;
   limit?: number;
+  includeOrderBy?: boolean;
 };
 
 const buildBillListQuery = (
@@ -178,7 +185,7 @@ const buildBillListQuery = (
   options: BillListQueryBuildOptions = {},
 ): { query: string; sqlParams: Array<string | number> } => {
   const { ledgerId, startDate, endDate, type = 'all', minAmount, maxAmount, categoryId, keyword } = params;
-  const { cursor, limit } = options;
+  const { cursor, limit, includeOrderBy = true } = options;
   const { start, end } = getDateBounds(startDate, endDate);
 
   let query = `
@@ -237,7 +244,9 @@ const buildBillListQuery = (
     sqlParams.push(cursor.createdAt, cursor.createdAt, cursor.id);
   }
 
-  query += ` ORDER BY r.created_at DESC, r.id DESC`;
+  if (includeOrderBy) {
+    query += ` ORDER BY r.created_at DESC, r.id DESC`;
+  }
 
   if (typeof limit === 'number') {
     query += ` LIMIT ?`;
@@ -255,6 +264,29 @@ export const getRecordsForBillList = (db: SQLiteDatabase, params: BillListQueryP
 export const getRecordsForBillListAsync = async (db: SQLiteDatabase, params: BillListQueryParams): Promise<RecordItem[]> => {
   const { query, sqlParams } = buildBillListQuery(params);
   return db.getAllAsync<RecordItem>(query, ...sqlParams);
+};
+
+export const getBillListMonthSummariesAsync = async (
+  db: SQLiteDatabase,
+  params: BillListQueryParams,
+): Promise<BillListMonthSummary[]> => {
+  const { query: sourceQuery, sqlParams } = buildBillListQuery(params, { includeOrderBy: false });
+  const rows = await db.getAllAsync<BillListMonthSummary>(
+    `SELECT
+        substr(source.created_at, 1, 7) as yearMonth,
+        COUNT(*) as recordCount,
+        IFNULL(SUM(CASE WHEN source.type = 'expense' THEN source.amount ELSE 0 END), 0) as expenseTotal
+     FROM (${sourceQuery}) source
+     GROUP BY substr(source.created_at, 1, 7)
+     ORDER BY yearMonth DESC`,
+    ...sqlParams,
+  );
+
+  return rows.map((row) => ({
+    yearMonth: row.yearMonth,
+    recordCount: Number(row.recordCount ?? 0),
+    expenseTotal: Number(row.expenseTotal ?? 0),
+  }));
 };
 
 export const getBillListPageAsync = async (

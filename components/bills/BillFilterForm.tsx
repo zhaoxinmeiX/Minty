@@ -1,6 +1,6 @@
 import { ChevronRight, CircleX } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { BillListType } from '@/src/db/operations';
@@ -14,11 +14,11 @@ type Props = {
   maxAmountInput: string;
   typeDraft: BillListType;
   selectedCategoryName?: string;
-  onStartDateChange: (value: string) => void;
-  onEndDateChange: (value: string) => void;
+  onClearDateRange: () => void;
   onMinAmountChange: (value: string) => void;
   onMaxAmountChange: (value: string) => void;
   onTypeChange: (value: BillListType) => void;
+  onOpenDateRangePicker: () => void;
   onOpenCategoryPicker: () => void;
   onClose: () => void;
   onReset: () => void;
@@ -38,38 +38,46 @@ export function BillFilterForm({
   maxAmountInput,
   typeDraft,
   selectedCategoryName,
-  onStartDateChange,
-  onEndDateChange,
+  onClearDateRange,
   onMinAmountChange,
   onMaxAmountChange,
   onTypeChange,
+  onOpenDateRangePicker,
   onOpenCategoryPicker,
   onClose,
   onReset,
   onApply,
 }: Props) {
   const theme = Colors.light;
+  const hasSelectedCategory = Boolean(selectedCategoryName);
+  const hasDateRange = Boolean(startDateInput || endDateInput);
+
+  const dateRangeText = startDateInput && endDateInput ? `${startDateInput} 至 ${endDateInput}` : startDateInput ? `${startDateInput} 起` : endDateInput ? `截止 ${endDateInput}` : '选择日期范围';
 
   return (
-    <>
-      <View style={styles.filterHeader}>
-        <View>
-          <Text style={styles.filterMainTitle}>高级筛选</Text>
-          <Text style={styles.filterHeaderHint}>组合条件，快速定位账单</Text>
-        </View>
-        <Pressable onPress={onClose} hitSlop={8}>
+    <ScrollView showsVerticalScrollIndicator={false} bounces={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.filterScrollContent}>
+      <View style={styles.filterHeaderCompact}>
+        <Text style={styles.filterMainTitle}>筛选</Text>
+        <Pressable style={styles.headerIconBtnPlain} onPress={onClose} hitSlop={8}>
           <CircleX size={22} color={theme.homeMuted} />
         </Pressable>
       </View>
 
       <View style={styles.filterCardBlock}>
-        <Text style={styles.filterTitle}>账单时间</Text>
-        <View style={styles.rangeRow}>
-          <TextInput value={startDateInput} onChangeText={onStartDateChange} placeholder="开始日期" placeholderTextColor={theme.homeMuted} style={styles.rangeInput} />
-          <Text style={styles.rangeDivider}>~</Text>
-          <TextInput value={endDateInput} onChangeText={onEndDateChange} placeholder="结束日期" placeholderTextColor={theme.homeMuted} style={styles.rangeInput} />
+        <View style={styles.dateRangeHeader}>
+          <Text style={styles.filterTitle}>账单时间</Text>
+          {hasDateRange ? (
+            <Pressable style={styles.inlineClearBtn} onPress={onClearDateRange} hitSlop={8}>
+              <Text style={styles.inlineClearText}>清空</Text>
+            </Pressable>
+          ) : null}
         </View>
-        <Text style={styles.helperText}>日期格式：YYYY-MM-DD</Text>
+        <Pressable style={styles.dateRangeTrigger} onPress={onOpenDateRangePicker}>
+          <Text style={[styles.dateRangeTriggerText, hasDateRange && styles.dateRangeTriggerTextActive]} numberOfLines={1}>
+            {dateRangeText}
+          </Text>
+          <ChevronRight size={18} color={hasDateRange ? theme.homeOlive : theme.homeMuted} />
+        </Pressable>
       </View>
 
       <View style={[styles.filterCardBlock, styles.filterBlockGap]}>
@@ -97,7 +105,7 @@ export function BillFilterForm({
             placeholderTextColor={theme.homeMuted}
             style={styles.rangeInput}
           />
-          <Text style={styles.rangeDivider}>~</Text>
+          <Text style={styles.rangeDivider}>至</Text>
           <TextInput
             value={maxAmountInput}
             onChangeText={onMaxAmountChange}
@@ -112,8 +120,10 @@ export function BillFilterForm({
       <Pressable style={[styles.filterRow, styles.filterBlockGap]} onPress={onOpenCategoryPicker}>
         <Text style={styles.filterTitle}>分类</Text>
         <View style={styles.filterRowRight}>
-          <Text style={styles.filterValue}>{selectedCategoryName || '不限制'}</Text>
-          <ChevronRight size={18} color={theme.homeMuted} />
+          <Text style={[styles.filterValue, hasSelectedCategory && styles.filterValueActive]} numberOfLines={1}>
+            {selectedCategoryName || '不限制'}
+          </Text>
+          <ChevronRight size={18} color={hasSelectedCategory ? theme.homeOlive : theme.homeMuted} />
         </View>
       </Pressable>
 
@@ -125,6 +135,6 @@ export function BillFilterForm({
           <Text style={styles.confirmText}>确定</Text>
         </Pressable>
       </View>
-    </>
+    </ScrollView>
   );
 }

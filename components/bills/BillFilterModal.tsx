@@ -6,25 +6,30 @@ import { BillListType } from '@/src/db/operations';
 import { CategoryOption } from '@/src/types/bills';
 
 import { BillFilterCategoryPicker } from './BillFilterCategoryPicker';
+import { BillFilterDateRangePicker } from './BillFilterDateRangePicker';
 import { BillFilterForm } from './BillFilterForm';
 import { styles } from './BillFilterModal.styles';
 
 type Props = {
   visible: boolean;
   showCategoryPicker: boolean;
+  showDateRangePicker: boolean;
   startDateInput: string;
   endDateInput: string;
   minAmountInput: string;
   maxAmountInput: string;
   typeDraft: BillListType;
+  selectedCategoryId?: number;
   selectedCategoryName?: string;
   categoryOptions: CategoryOption[];
-  insetTop: number;
   animatedBackdropStyle: object;
   animatedFilterSheetStyle: object;
   onClose: () => void;
+  onClearDateRange: () => void;
+  onOpenDateRangePicker: () => void;
   onOpenCategoryPicker: () => void;
   onCloseCategoryPicker: () => void;
+  onCloseDateRangePicker: () => void;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
   onMinAmountChange: (value: string) => void;
@@ -38,19 +43,23 @@ type Props = {
 export function BillFilterModal({
   visible,
   showCategoryPicker,
+  showDateRangePicker,
   startDateInput,
   endDateInput,
   minAmountInput,
   maxAmountInput,
   typeDraft,
+  selectedCategoryId,
   selectedCategoryName,
   categoryOptions,
-  insetTop,
   animatedBackdropStyle,
   animatedFilterSheetStyle,
   onClose,
+  onClearDateRange,
+  onOpenDateRangePicker,
   onOpenCategoryPicker,
   onCloseCategoryPicker,
+  onCloseDateRangePicker,
   onStartDateChange,
   onEndDateChange,
   onMinAmountChange,
@@ -70,29 +79,42 @@ export function BillFilterModal({
         </Animated.View>
 
         <Animated.View style={[styles.filterSheet, animatedFilterSheetStyle]}>
-          <View style={[styles.filterPanel, { paddingTop: Math.max(insetTop, 16), paddingBottom: 16, paddingHorizontal: 16 }]}>
-            {showCategoryPicker ? (
-              <BillFilterCategoryPicker categoryOptions={categoryOptions} onSelectCategory={onSelectCategory} onCloseCategoryPicker={onCloseCategoryPicker} onClose={onClose} />
-            ) : (
-              <BillFilterForm
-                startDateInput={startDateInput}
-                endDateInput={endDateInput}
-                minAmountInput={minAmountInput}
-                maxAmountInput={maxAmountInput}
-                typeDraft={typeDraft}
-                selectedCategoryName={selectedCategoryName}
-                onStartDateChange={onStartDateChange}
-                onEndDateChange={onEndDateChange}
-                onMinAmountChange={onMinAmountChange}
-                onMaxAmountChange={onMaxAmountChange}
-                onTypeChange={onTypeChange}
-                onOpenCategoryPicker={onOpenCategoryPicker}
-                onClose={onClose}
-                onReset={onReset}
-                onApply={onApply}
-              />
-            )}
-          </View>
+          {showCategoryPicker ? (
+            <BillFilterCategoryPicker
+              categoryOptions={categoryOptions}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={onSelectCategory}
+              onCloseCategoryPicker={onCloseCategoryPicker}
+              onClose={onClose}
+            />
+          ) : showDateRangePicker ? (
+            <BillFilterDateRangePicker
+              startDateInput={startDateInput}
+              endDateInput={endDateInput}
+              onStartDateChange={onStartDateChange}
+              onEndDateChange={onEndDateChange}
+              onCloseDateRangePicker={onCloseDateRangePicker}
+              onClose={onClose}
+            />
+          ) : (
+            <BillFilterForm
+              startDateInput={startDateInput}
+              endDateInput={endDateInput}
+              minAmountInput={minAmountInput}
+              maxAmountInput={maxAmountInput}
+              typeDraft={typeDraft}
+              selectedCategoryName={selectedCategoryName}
+              onClearDateRange={onClearDateRange}
+              onMinAmountChange={onMinAmountChange}
+              onMaxAmountChange={onMaxAmountChange}
+              onTypeChange={onTypeChange}
+              onOpenDateRangePicker={onOpenDateRangePicker}
+              onOpenCategoryPicker={onOpenCategoryPicker}
+              onClose={onClose}
+              onReset={onReset}
+              onApply={onApply}
+            />
+          )}
         </Animated.View>
       </View>
     </Modal>

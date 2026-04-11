@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronDown, CircleX, Search, X } from 'lucide-react-native';
+import { ArrowLeft, ChevronDown, CircleX, Search, SlidersHorizontal, X } from 'lucide-react-native';
 import React from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -10,7 +10,6 @@ type Props = {
   keyword: string;
   ledgerName: string;
   ledgerTriggerRef?: React.RefObject<View | null>;
-  monthLabel: string | null;
   showFilters: boolean;
   onBack: () => void;
   onKeywordChange: (value: string) => void;
@@ -19,7 +18,6 @@ type Props = {
   onCloseSearch: () => void;
   onOpenSearch: () => void;
   onOpenLedgerPicker: () => void;
-  onOpenMonthPicker: () => void;
   onToggleFilters: () => void;
 };
 
@@ -28,7 +26,6 @@ export function BillsTopBar({
   keyword,
   ledgerName,
   ledgerTriggerRef,
-  monthLabel,
   showFilters,
   onBack,
   onKeywordChange,
@@ -37,18 +34,12 @@ export function BillsTopBar({
   onCloseSearch,
   onOpenSearch,
   onOpenLedgerPicker,
-  onOpenMonthPicker,
   onToggleFilters,
 }: Props) {
   const theme = Colors.light;
   const handleOpenLedgerPicker = () => {
     Keyboard.dismiss();
     onOpenLedgerPicker();
-  };
-
-  const handleOpenMonthPicker = () => {
-    Keyboard.dismiss();
-    onOpenMonthPicker();
   };
 
   const handleToggleFilters = () => {
@@ -112,19 +103,6 @@ export function BillsTopBar({
               <ChevronDown size={15} color={theme.homeOlive} />
             </Pressable>
           </View>
-
-          <Pressable
-            style={[
-              styles.toolbarChip,
-              {
-                backgroundColor: monthLabel ? theme.homeAccentSoft : theme.homeSurface,
-              },
-            ]}
-            onPress={handleOpenMonthPicker}
-          >
-            <Text style={[styles.toolbarChipText, { color: monthLabel ? theme.homeAccent : theme.text }]}>{monthLabel || '全部时间'}</Text>
-            <ChevronDown size={15} color={monthLabel ? theme.homeAccent : theme.homeOlive} />
-          </Pressable>
         </View>
 
         <Pressable
@@ -138,7 +116,7 @@ export function BillsTopBar({
           onPress={handleToggleFilters}
         >
           <Text style={[styles.toolbarChipText, { color: showFilters ? theme.homeOlive : theme.text }]}>筛选</Text>
-          <ChevronDown size={15} color={theme.homeOlive} />
+          <SlidersHorizontal size={16} color={theme.homeOlive} />
         </Pressable>
       </View>
     </>

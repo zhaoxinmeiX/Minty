@@ -2,17 +2,23 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rou
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, SectionList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { BillFilterModal } from '@/components/bills/BillFilterModal';
 import { BillsTopBar } from '@/components/bills/BillsTopBar';
-import { MonthPickerModal } from '@/components/calendar/MonthPickerModal';
 import { BillListRow, formatRecordAmount, getRecordDayKey } from '@/components/record/BillListRow';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { BillListCursor, BillListType, deleteRecord, getBillListCategoryOptionsAsync, getBillListPageAsync } from '@/src/db/operations';
+import {
+  BillListCursor,
+  BillListMonthSummary,
+  BillListType,
+  deleteRecord,
+  getBillListCategoryOptionsAsync,
+  getBillListMonthSummariesAsync,
+  getBillListPageAsync,
+} from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useBillFilters } from '@/src/hooks/useBillFilters';
 import { useLedgers } from '@/src/hooks/useLedgers';
@@ -25,6 +31,7 @@ import { groupRecordsByMonth, MonthlyRecordSection } from '@/src/utils/recordSec
 import { styles } from './bills.styles';
 
 const PAGE_SIZE = 60;
+type BillSection = MonthlyRecordSection & { recordCount: number };
 
 function mergeRecordPages(existing: RecordItem[], incoming: RecordItem[]) {
   if (existing.length === 0) {
@@ -50,7 +57,6 @@ export default function BillsScreen() {
   const params = useLocalSearchParams<RouteParams>();
   const theme = Colors.light;
   const { height: screenHeight } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const stableInsets = useStableSafeAreaInsets();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
   const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
@@ -69,6 +75,7 @@ export default function BillsScreen() {
   const initialEndDate = params.endDate && isValidDate(params.endDate) ? params.endDate : undefined;
 
   const [records, setRecords] = useState<RecordItem[]>([]);
+  const [monthSummaries, setMonthSummaries] = useState<BillListMonthSummary[]>([]);
   const [nextCursor, setNextCursor] = useState<BillListCursor | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -76,7 +83,6 @@ export default function BillsScreen() {
   const [selectedRecord, setSelectedRecord] = useState<RecordItem | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   const [isLedgerModalVisible, setIsLedgerModalVisible] = useState(false);
-  const [isMonthPickerVisible, setIsMonthPickerVisible] = useState(false);
   const [ledgerAnchorFrame, setLedgerAnchorFrame] = useState<LedgerPickerAnchorFrame | null>(null);
   const ledgerButtonRef = React.useRef<View>(null);
 
@@ -89,10 +95,9 @@ export default function BillsScreen() {
 
   const {
     filters,
-    monthLabel,
-    monthPickerValue,
     showFilters,
     showCategoryPicker,
+    showDateRangePicker,
     isFilterModalMounted,
     startDateInput,
     endDateInput,
@@ -110,10 +115,12 @@ export default function BillsScreen() {
     setCategoryDraftId,
     handleApplyFilters,
     handleResetFilters,
-    handleSelectMonth,
     handleToggleFilters,
     handleOpenCategoryPicker,
     handleCloseCategoryPicker,
+    handleOpenDateRangePicker,
+    handleCloseDateRangePicker,
+    handleClearDateRange,
   } = useBillFilters({
     initialType,
     initialCategoryId,
@@ -162,10 +169,13 @@ export default function BillsScreen() {
       setIsInitialLoading(true);
 
       try {
-        const page = await getBillListPageAsync(db, {
-          ...queryParams,
-          limit: PAGE_SIZE,
-        });
+        const [page, summaries] = await Promise.all([
+          getBillListPageAsync(db, {
+            ...queryParams,
+            limit: PAGE_SIZE,
+          }),
+          getBillListMonthSummariesAsync(db, queryParams),
+        ]);
 
         if (requestId !== requestIdRef.current) {
           return;
@@ -175,6 +185,7 @@ export default function BillsScreen() {
         hasLoadedAtLeastOnceRef.current = true;
 
         setRecords(page.records);
+        setMonthSummaries(summaries);
         setNextCursor(page.nextCursor);
         setHasMore(page.hasMore);
       } finally {
@@ -235,7 +246,35 @@ export default function BillsScreen() {
     }, [dataVersion, fetchCategoryOptions, loadFirstPage]),
   );
 
-  const sections = useMemo<MonthlyRecordSection[]>(() => groupRecordsByMonth(records), [records]);
+  const monthSummaryByKey = useMemo(() => {
+    const map = new Map<string, { recordCount: number; expenseTotal: number }>();
+
+    monthSummaries.forEach((summary) => {
+      const [year, month] = summary.yearMonth.split('-');
+      if (!year || !month) {
+        return;
+      }
+
+      map.set(`${year}-${Number(month)}`, {
+        recordCount: summary.recordCount,
+        expenseTotal: summary.expenseTotal,
+      });
+    });
+
+    return map;
+  }, [monthSummaries]);
+
+  const sections = useMemo<BillSection[]>(() => {
+    return groupRecordsByMonth(records).map((section) => {
+      const summary = monthSummaryByKey.get(section.key);
+
+      return {
+        ...section,
+        recordCount: summary?.recordCount ?? section.data.length,
+        expenseTotal: summary?.expenseTotal ?? section.expenseTotal,
+      };
+    });
+  }, [monthSummaryByKey, records]);
 
   const selectedCategory = useMemo(() => categoryOptions.find((item) => item.category_id === categoryDraftId), [categoryDraftId, categoryOptions]);
 
@@ -292,7 +331,6 @@ export default function BillsScreen() {
         keyword={keyword}
         ledgerName={activeLedger?.name || '家庭账本'}
         ledgerTriggerRef={ledgerButtonRef}
-        monthLabel={monthLabel}
         showFilters={showFilters}
         onBack={() => router.back()}
         onKeywordChange={setKeyword}
@@ -301,7 +339,6 @@ export default function BillsScreen() {
         onCloseSearch={handleCloseSearch}
         onOpenSearch={() => setSearchOpen(true)}
         onOpenLedgerPicker={openLedgerPicker}
-        onOpenMonthPicker={() => setIsMonthPickerVisible(true)}
         onToggleFilters={handleToggleFilters}
       />
 
@@ -329,7 +366,7 @@ export default function BillsScreen() {
                     <View style={[styles.sectionMetaDot, { backgroundColor: theme.homeAccent }]} />
                     <Text style={[styles.sectionTitle, { color: theme.text }]}>{section.title}</Text>
                     <View style={[styles.sectionCountPill, { backgroundColor: 'rgba(110, 125, 66, 0.08)' }]}>
-                      <Text style={[styles.sectionCountText, { color: theme.homeMuted }]}>{section.data.length} 笔</Text>
+                      <Text style={[styles.sectionCountText, { color: theme.homeMuted }]}>{section.recordCount} 笔</Text>
                     </View>
                   </View>
                   <Text style={[styles.sectionTotalText, { color: theme.text }]}>支 {formatRecordAmount(section.expenseTotal)}</Text>
@@ -405,19 +442,23 @@ export default function BillsScreen() {
       <BillFilterModal
         visible={isFilterModalMounted}
         showCategoryPicker={showCategoryPicker}
+        showDateRangePicker={showDateRangePicker}
         startDateInput={startDateInput}
         endDateInput={endDateInput}
         minAmountInput={minAmountInput}
         maxAmountInput={maxAmountInput}
         typeDraft={typeDraft}
+        selectedCategoryId={categoryDraftId}
         selectedCategoryName={selectedCategory?.category}
         categoryOptions={categoryOptions}
-        insetTop={insets.top}
         animatedBackdropStyle={animatedBackdropStyle}
         animatedFilterSheetStyle={animatedFilterSheetStyle}
         onClose={handleToggleFilters}
+        onClearDateRange={handleClearDateRange}
+        onOpenDateRangePicker={handleOpenDateRangePicker}
         onOpenCategoryPicker={handleOpenCategoryPicker}
         onCloseCategoryPicker={handleCloseCategoryPicker}
+        onCloseDateRangePicker={handleCloseDateRangePicker}
         onStartDateChange={setStartDateInput}
         onEndDateChange={setEndDateInput}
         onMinAmountChange={setMinAmountInput}
@@ -426,17 +467,6 @@ export default function BillsScreen() {
         onSelectCategory={setCategoryDraftId}
         onReset={handleResetFilters}
         onApply={handleApplyFilters}
-      />
-
-      <MonthPickerModal
-        visible={isMonthPickerVisible}
-        currentMonth={monthPickerValue}
-        onSelect={(month) => {
-          handleSelectMonth(month);
-          setIsMonthPickerVisible(false);
-        }}
-        onClose={() => setIsMonthPickerVisible(false)}
-        accentColor={theme.homeAccent}
       />
 
       <RecordDetailSheet

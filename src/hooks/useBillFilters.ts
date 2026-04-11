@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { BillListType } from '@/src/db/operations';
 import { AppliedFilters } from '@/src/types/bills';
-import { getMonthLabel, getMonthRange, isValidDate, normalizeBillType, parseNumber } from '@/src/utils/billsFilters';
+import { isValidDate, normalizeBillType, parseNumber } from '@/src/utils/billsFilters';
 
 type Params = {
   initialType?: string;
@@ -18,6 +18,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
 
   const [showFilters, setShowFilters] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showDateRangePicker, setShowDateRangePicker] = useState(false);
   const [isFilterModalMounted, setIsFilterModalMounted] = useState(false);
 
   const [startDateInput, setStartDateInput] = useState(initialStartDate ?? '');
@@ -34,7 +35,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     categoryId: initialCategoryId,
   });
 
-  const filterTranslateY = useSharedValue(-screenHeight);
+  const filterTranslateY = useSharedValue(screenHeight);
   const filterBackdropOpacity = useSharedValue(0);
   const hideFilterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,15 +47,14 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     transform: [{ translateY: filterTranslateY.value }],
   }));
 
-  const monthLabel = useMemo(() => getMonthLabel(filters.startDate, filters.endDate), [filters.endDate, filters.startDate]);
-
-  const monthPickerValue = useMemo(() => {
-    if (monthLabel && filters.startDate) {
-      return filters.startDate.slice(0, 7);
-    }
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  }, [filters.startDate, monthLabel]);
+  const syncDraftsFromFilters = (nextFilters: AppliedFilters) => {
+    setStartDateInput(nextFilters.startDate ?? '');
+    setEndDateInput(nextFilters.endDate ?? '');
+    setTypeDraft(nextFilters.type ?? 'all');
+    setMinAmountInput(nextFilters.minAmount !== undefined ? nextFilters.minAmount.toString() : '');
+    setMaxAmountInput(nextFilters.maxAmount !== undefined ? nextFilters.maxAmount.toString() : '');
+    setCategoryDraftId(nextFilters.categoryId);
+  };
 
   useEffect(() => {
     if (showFilters) {
@@ -68,7 +68,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
       return;
     }
 
-    filterTranslateY.value = withTiming(-screenHeight, { duration: 220 });
+    filterTranslateY.value = withTiming(screenHeight, { duration: 220 });
     filterBackdropOpacity.value = withTiming(0, { duration: 200 });
 
     hideFilterTimerRef.current = setTimeout(() => {
@@ -112,39 +112,41 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     setMinAmountInput('');
     setMaxAmountInput('');
     setCategoryDraftId(undefined);
-    setFilters({ type: 'all' });
-  };
-
-  const handleSelectMonth = (month: string) => {
-    const { startDate, endDate } = getMonthRange(month);
-    setStartDateInput(startDate);
-    setEndDateInput(endDate);
-    setFilters((prev) => ({
-      ...prev,
-      startDate,
-      endDate,
-    }));
   };
 
   const handleToggleFilters = () => {
     if (showFilters) {
       setShowCategoryPicker(false);
+      setShowDateRangePicker(false);
       setShowFilters(false);
       return;
     }
+    syncDraftsFromFilters(filters);
     setShowCategoryPicker(false);
+    setShowDateRangePicker(false);
     setShowFilters(true);
   };
 
-  const handleOpenCategoryPicker = () => setShowCategoryPicker(true);
+  const handleOpenCategoryPicker = () => {
+    setShowDateRangePicker(false);
+    setShowCategoryPicker(true);
+  };
   const handleCloseCategoryPicker = () => setShowCategoryPicker(false);
+  const handleOpenDateRangePicker = () => {
+    setShowCategoryPicker(false);
+    setShowDateRangePicker(true);
+  };
+  const handleCloseDateRangePicker = () => setShowDateRangePicker(false);
+  const handleClearDateRange = () => {
+    setStartDateInput('');
+    setEndDateInput('');
+  };
 
   return {
     filters,
-    monthLabel,
-    monthPickerValue,
     showFilters,
     showCategoryPicker,
+    showDateRangePicker,
     isFilterModalMounted,
     startDateInput,
     endDateInput,
@@ -162,9 +164,11 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     setCategoryDraftId,
     handleApplyFilters,
     handleResetFilters,
-    handleSelectMonth,
     handleToggleFilters,
     handleOpenCategoryPicker,
     handleCloseCategoryPicker,
+    handleOpenDateRangePicker,
+    handleCloseDateRangePicker,
+    handleClearDateRange,
   };
 }
