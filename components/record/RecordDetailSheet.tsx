@@ -47,7 +47,7 @@ export const RecordDetailSheet: React.FC<RecordDetailSheetProps> = ({ visible, r
 
   if (!record) return null;
 
-  const Icon = getIconComponent(record.category_id ? record.category : 'Question'); // Fallback logic
+  const Icon = getIconComponent(record.icon || 'Question');
   const isExpense = record.type === 'expense';
   const amountColor = isExpense ? theme.expense : theme.income;
 

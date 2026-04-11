@@ -1,18 +1,18 @@
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SectionList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Keyboard, SectionList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { BillFilterModal } from '@/components/bills/BillFilterModal';
 import { BillsTopBar } from '@/components/bills/BillsTopBar';
 import { MonthPickerModal } from '@/components/calendar/MonthPickerModal';
+import { BillListRow, formatRecordAmount, getRecordDayKey } from '@/components/record/BillListRow';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
-import { RecordListItem } from '@/components/record/RecordListItem';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { BillListType, deleteRecord, getBillListCategoryOptions, getRecordsForBillList } from '@/src/db/operations';
+import { BillListCursor, BillListType, deleteRecord, getBillListCategoryOptionsAsync, getBillListPageAsync } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useBillFilters } from '@/src/hooks/useBillFilters';
 import { useLedgers } from '@/src/hooks/useLedgers';
@@ -20,9 +20,29 @@ import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { CategoryOption, RouteParams } from '@/src/types/bills';
 import { isValidDate } from '@/src/utils/billsFilters';
-import { parseISODate } from '@/src/utils/date';
+import { groupRecordsByMonth, MonthlyRecordSection } from '@/src/utils/recordSections';
 
 import { styles } from './bills.styles';
+
+const PAGE_SIZE = 60;
+
+function mergeRecordPages(existing: RecordItem[], incoming: RecordItem[]) {
+  if (existing.length === 0) {
+    return incoming;
+  }
+
+  const seen = new Set(existing.map((item) => item.id));
+  const merged = existing.slice();
+
+  incoming.forEach((item) => {
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      merged.push(item);
+    }
+  });
+
+  return merged;
+}
 
 export default function BillsScreen() {
   const db = useSQLiteContext();
@@ -34,9 +54,14 @@ export default function BillsScreen() {
   const stableInsets = useStableSafeAreaInsets();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
   const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
+  const dataVersion = useStore((state) => state.dataVersion);
   const bumpDataVersion = useStore((state) => state.bumpDataVersion);
   const { ledgers } = useLedgers();
   const activeLedger = ledgers.find((item) => item.id === activeLedgerId);
+  const requestIdRef = useRef(0);
+  const categoryRequestIdRef = useRef(0);
+  const lastSyncedDataVersionRef = useRef(dataVersion);
+  const hasLoadedAtLeastOnceRef = useRef(false);
 
   const initialType = (params.type as BillListType) || 'all';
   const initialCategoryId = params.categoryId ? Number(params.categoryId) : undefined;
@@ -44,6 +69,10 @@ export default function BillsScreen() {
   const initialEndDate = params.endDate && isValidDate(params.endDate) ? params.endDate : undefined;
 
   const [records, setRecords] = useState<RecordItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<BillListCursor | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<RecordItem | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   const [isLedgerModalVisible, setIsLedgerModalVisible] = useState(false);
@@ -53,6 +82,8 @@ export default function BillsScreen() {
 
   const [searchOpen, setSearchOpen] = useState(params.openSearch === '1');
   const [keyword, setKeyword] = useState('');
+  const [appliedKeyword, setAppliedKeyword] = useState('');
+  const [isSearchPending, setIsSearchPending] = useState(false);
 
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
 
@@ -91,13 +122,8 @@ export default function BillsScreen() {
     screenHeight,
   });
 
-  const fetchCategoryOptions = useCallback(() => {
-    const result = getBillListCategoryOptions(db, activeLedgerId);
-    setCategoryOptions(result);
-  }, [db, activeLedgerId]);
-
-  const fetchRecords = useCallback(() => {
-    const result = getRecordsForBillList(db, {
+  const queryParams = useMemo(
+    () => ({
       ledgerId: activeLedgerId,
       startDate: filters.startDate,
       endDate: filters.endDate,
@@ -105,45 +131,111 @@ export default function BillsScreen() {
       minAmount: filters.minAmount,
       maxAmount: filters.maxAmount,
       categoryId: filters.categoryId,
-      keyword,
-    });
-    setRecords(result);
-  }, [db, activeLedgerId, filters, keyword]);
+      keyword: appliedKeyword,
+    }),
+    [activeLedgerId, appliedKeyword, filters.categoryId, filters.endDate, filters.maxAmount, filters.minAmount, filters.startDate, filters.type],
+  );
+
+  const fetchCategoryOptions = useCallback(async () => {
+    const requestId = ++categoryRequestIdRef.current;
+    const result = await getBillListCategoryOptionsAsync(db, activeLedgerId);
+
+    if (requestId !== categoryRequestIdRef.current) {
+      return;
+    }
+
+    setCategoryOptions(result);
+  }, [db, activeLedgerId]);
+
+  const loadFirstPage = useCallback(
+    async (options: { preserveRecords?: boolean } = {}) => {
+      const { preserveRecords = false } = options;
+      const requestId = ++requestIdRef.current;
+
+      if (!preserveRecords) {
+        setRecords([]);
+        setNextCursor(null);
+        setHasMore(true);
+      }
+
+      setIsLoadingMore(false);
+      setIsInitialLoading(true);
+
+      try {
+        const page = await getBillListPageAsync(db, {
+          ...queryParams,
+          limit: PAGE_SIZE,
+        });
+
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        lastSyncedDataVersionRef.current = useStore.getState().dataVersion;
+        hasLoadedAtLeastOnceRef.current = true;
+
+        setRecords(page.records);
+        setNextCursor(page.nextCursor);
+        setHasMore(page.hasMore);
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsInitialLoading(false);
+          setIsSearchPending(false);
+        }
+      }
+    },
+    [db, queryParams],
+  );
+
+  const loadMore = useCallback(async () => {
+    if (isInitialLoading || isLoadingMore || !hasMore || !nextCursor) {
+      return;
+    }
+
+    const requestId = requestIdRef.current;
+    setIsLoadingMore(true);
+
+    try {
+      const page = await getBillListPageAsync(db, {
+        ...queryParams,
+        cursor: nextCursor,
+        limit: PAGE_SIZE,
+      });
+
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setRecords((current) => mergeRecordPages(current, page.records));
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsLoadingMore(false);
+      }
+    }
+  }, [db, hasMore, isInitialLoading, isLoadingMore, nextCursor, queryParams]);
 
   useEffect(() => {
-    fetchCategoryOptions();
+    void fetchCategoryOptions();
   }, [fetchCategoryOptions]);
 
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+    void loadFirstPage({ preserveRecords: hasLoadedAtLeastOnceRef.current });
+  }, [loadFirstPage]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchRecords();
-    }, [fetchRecords]),
+      if (lastSyncedDataVersionRef.current === dataVersion) {
+        return;
+      }
+
+      void fetchCategoryOptions();
+      void loadFirstPage({ preserveRecords: true });
+    }, [dataVersion, fetchCategoryOptions, loadFirstPage]),
   );
 
-  const sections = useMemo(() => {
-    const groups = new Map<string, { data: RecordItem[]; expenseTotal: number }>();
-    records.forEach((item) => {
-      const date = parseISODate(item.created_at);
-      if (!date) return;
-      const title = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-      if (!groups.has(title)) {
-        groups.set(title, { data: [], expenseTotal: 0 });
-      }
-      const group = groups.get(title)!;
-      group.data.push(item);
-      if (item.type === 'expense') group.expenseTotal += item.amount;
-    });
-
-    return Array.from(groups.entries()).map(([title, group]) => ({
-      title,
-      data: group.data,
-      expenseTotal: group.expenseTotal,
-    }));
-  }, [records]);
+  const sections = useMemo<MonthlyRecordSection[]>(() => groupRecordsByMonth(records), [records]);
 
   const selectedCategory = useMemo(() => categoryOptions.find((item) => item.category_id === categoryDraftId), [categoryDraftId, categoryOptions]);
 
@@ -162,18 +254,32 @@ export default function BillsScreen() {
     });
   };
 
-  const renderSectionHeader = ({ section }: { section: { title: string; expenseTotal: number } }) => (
-    <View style={styles.monthHeader}>
-      <Text style={styles.monthTitle}>{section.title}</Text>
-      <Text style={[styles.monthTotal, { color: theme.homeOlive }]}>支 {section.expenseTotal.toFixed(2)}</Text>
-    </View>
-  );
+  const ledgerName = activeLedger?.name || '家庭账本';
+  const handleKeywordSubmit = useCallback(() => {
+    const nextKeyword = keyword.trim();
 
-  const getDateKey = (record: RecordItem) => {
-    const date = parseISODate(record.created_at);
-    if (!date) return record.created_at.split(' ')[0] || record.created_at;
-    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-  };
+    if (nextKeyword === appliedKeyword) {
+      return;
+    }
+
+    setIsSearchPending(true);
+    setAppliedKeyword(nextKeyword);
+  }, [appliedKeyword, keyword]);
+
+  const handleKeywordClear = useCallback(() => {
+    setKeyword('');
+    if (!appliedKeyword) {
+      return;
+    }
+
+    setIsSearchPending(true);
+    setAppliedKeyword('');
+  }, [appliedKeyword]);
+
+  const handleCloseSearch = useCallback(() => {
+    setSearchOpen(false);
+    handleKeywordClear();
+  }, [handleKeywordClear]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: stableInsets.top }]}>
@@ -190,45 +296,111 @@ export default function BillsScreen() {
         showFilters={showFilters}
         onBack={() => router.back()}
         onKeywordChange={setKeyword}
-        onClearKeyword={() => setKeyword('')}
-        onCloseSearch={() => setSearchOpen(false)}
+        onSubmitKeyword={handleKeywordSubmit}
+        onClearKeyword={handleKeywordClear}
+        onCloseSearch={handleCloseSearch}
         onOpenSearch={() => setSearchOpen(true)}
         onOpenLedgerPicker={openLedgerPicker}
         onOpenMonthPicker={() => setIsMonthPickerVisible(true)}
         onToggleFilters={handleToggleFilters}
       />
 
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id.toString()}
-        renderSectionHeader={renderSectionHeader}
-        contentContainerStyle={styles.listContent}
-        stickySectionHeadersEnabled={false}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item, index, section }) => {
-          const prevItem = index > 0 ? section.data[index - 1] : null;
-          const showDateBadge = !prevItem || getDateKey(prevItem) !== getDateKey(item);
+      <View style={localStyles.listShell}>
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={[styles.listContent, { paddingBottom: stableInsets.bottom + 28 }, sections.length === 0 && localStyles.listContentEmpty]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onScrollBeginDrag={Keyboard.dismiss}
+          stickySectionHeadersEnabled={false}
+          initialNumToRender={18}
+          maxToRenderPerBatch={24}
+          windowSize={10}
+          removeClippedSubviews
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.35}
+          renderSectionHeader={({ section }) => {
+            return (
+              <View style={localStyles.sectionHeader}>
+                <View style={styles.sectionMetaRow}>
+                  <View style={styles.sectionMetaLeft}>
+                    <View style={[styles.sectionMetaDot, { backgroundColor: theme.homeAccent }]} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{section.title}</Text>
+                    <View style={[styles.sectionCountPill, { backgroundColor: 'rgba(110, 125, 66, 0.08)' }]}>
+                      <Text style={[styles.sectionCountText, { color: theme.homeMuted }]}>{section.data.length} 笔</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.sectionTotalText, { color: theme.text }]}>支 {formatRecordAmount(section.expenseTotal)}</Text>
+                </View>
+              </View>
+            );
+          }}
+          renderItem={({ item, index, section }) => {
+            const currentDayKey = getRecordDayKey(item.created_at);
+            const previousDayKey = index > 0 ? getRecordDayKey(section.data[index - 1].created_at) : '';
+            const isFirst = index === 0;
+            const isLast = index === section.data.length - 1;
 
-          return (
-            <RecordListItem
-              item={item}
-              showTime
-              showDateBadge={showDateBadge}
-              reserveDateBadgeSpace
-              onPress={(record) => {
-                setSelectedRecord(record);
-                setIsDetailVisible(true);
-              }}
-            />
-          );
-        }}
-        ListEmptyComponent={
-          <View style={[localStyles.emptyCard, { backgroundColor: theme.homeSurface }]}>
-            <Text style={[localStyles.emptyTitle, { color: theme.text }]}>暂无符合条件的账单</Text>
-            <Text style={[localStyles.emptyHint, { color: theme.homeMuted }]}>试试调整筛选条件或搜索关键词。</Text>
+            return (
+              <View
+                style={[
+                  localStyles.sectionRowShell,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: 'rgba(110, 125, 66, 0.08)',
+                  },
+                  isFirst && localStyles.sectionRowFirst,
+                  isLast && localStyles.sectionRowLast,
+                  isFirst && isLast && localStyles.sectionRowSingle,
+                ]}
+              >
+                <BillListRow
+                  item={item}
+                  ledgerName={ledgerName}
+                  showDate={isFirst || currentDayKey !== previousDayKey}
+                  showDivider={!isLast}
+                  onPress={(selected) => {
+                    setSelectedRecord(selected);
+                    setIsDetailVisible(true);
+                  }}
+                />
+              </View>
+            );
+          }}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <View style={localStyles.footerLoader}>
+                <ActivityIndicator size="small" color={theme.homeOlive} />
+                <Text style={[localStyles.loadingHint, { color: theme.homeMuted }]}>继续加载账单...</Text>
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            isSearchPending ? null : isInitialLoading ? (
+              <View style={[localStyles.loadingCard, { backgroundColor: theme.homeSurface }]}>
+                <ActivityIndicator size="small" color={theme.homeOlive} />
+                <Text style={[localStyles.loadingHint, { color: theme.homeMuted }]}>正在加载账单...</Text>
+              </View>
+            ) : (
+              <View style={[localStyles.emptyCard, { backgroundColor: theme.homeSurface }]}>
+                <Text style={[localStyles.emptyTitle, { color: theme.text }]}>暂无符合条件的账单</Text>
+                <Text style={[localStyles.emptyHint, { color: theme.homeMuted }]}>试试调整筛选条件或搜索关键词。</Text>
+              </View>
+            )
+          }
+        />
+
+        {isSearchPending ? (
+          <View style={[localStyles.searchLoadingOverlay, { backgroundColor: 'rgba(255, 249, 241, 0.68)' }]}>
+            <View style={[localStyles.searchLoadingPanel, { backgroundColor: 'rgba(255, 249, 241, 0.96)', borderColor: 'rgba(110, 125, 66, 0.12)' }]}>
+              <ActivityIndicator size="small" color={theme.homeOlive} />
+              <Text style={[localStyles.searchLoadingText, { color: theme.homeMuted }]}>搜索中...</Text>
+            </View>
           </View>
-        }
-      />
+        ) : null}
+      </View>
 
       <BillFilterModal
         visible={isFilterModalMounted}
@@ -284,7 +456,8 @@ export default function BillsScreen() {
           deleteRecord(db, id);
           bumpDataVersion();
           setIsDetailVisible(false);
-          fetchRecords();
+          void fetchCategoryOptions();
+          void loadFirstPage({ preserveRecords: true });
         }}
       />
 
@@ -341,5 +514,77 @@ const localStyles = StyleSheet.create({
   },
   emptyHint: {
     fontSize: Typography.size.body,
+  },
+  searchLoadingText: {
+    fontSize: Typography.size.footnote,
+    lineHeight: Typography.lineHeight.footnote,
+    fontWeight: '700',
+  },
+  listContentEmpty: {
+    flexGrow: 1,
+  },
+  listShell: {
+    flex: 1,
+    position: 'relative',
+  },
+  sectionHeader: {
+    marginHorizontal: 16,
+    marginBottom: 4,
+  },
+  sectionRowShell: {
+    marginHorizontal: 16,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    overflow: 'hidden',
+  },
+  sectionRowFirst: {
+    borderTopWidth: 1,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  sectionRowLast: {
+    borderBottomWidth: 1,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    marginBottom: 10,
+  },
+  sectionRowSingle: {
+    marginBottom: 10,
+  },
+  loadingCard: {
+    marginHorizontal: 16,
+    marginTop: 28,
+    borderRadius: 28,
+    paddingVertical: 24,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingHint: {
+    fontSize: Typography.size.body,
+    marginTop: 10,
+  },
+  footerLoader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 6,
+    paddingBottom: 18,
+  },
+  searchLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 24,
+    paddingHorizontal: 16,
+  },
+  searchLoadingPanel: {
+    minHeight: 40,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
 });

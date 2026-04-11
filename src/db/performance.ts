@@ -162,9 +162,10 @@ export const getDateRangeSummary = (
 export const getRecentRecords = (db: SQLiteDatabase, ledgerId: number, limit: number = 50): any[] => {
   try {
     return db.getAllSync(
-      `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+      `SELECT r.*, COALESCE(sc.icon, c.icon, 'LayoutGrid') as icon
        FROM records r
        LEFT JOIN categories c ON r.category_id = c.id
+       LEFT JOIN categories sc ON r.sub_category_id = sc.id
        WHERE r.ledger_id = ?
        ORDER BY r.created_at DESC
        LIMIT ?`,

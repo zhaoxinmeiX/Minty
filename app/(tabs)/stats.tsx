@@ -1,28 +1,49 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import React, { useCallback, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, FileText } from 'lucide-react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { StatsDonutChart } from '@/components/stats/StatsDonutChart';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
+import { useLedgers } from '@/src/hooks/useLedgers';
 import { CategoryStat, TimeRange, useStatsScreen } from '@/src/hooks/useStatsScreen';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
+
+const RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
+  { value: 'all', label: '总览' },
+  { value: 'year', label: '年' },
+  { value: 'month', label: '月' },
+  { value: 'week', label: '周' },
+];
+
+const formatAmount = (value: number) =>
+  value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 export default function StatsScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
+  const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
   const setLastTab = useStore((state) => state.setLastTab);
   const dataVersion = useStore((state) => state.dataVersion);
   const theme = Colors.light;
   const insets = useStableSafeAreaInsets();
+  const { ledgers } = useLedgers();
   const statsState = useStatsScreen(db, activeLedgerId);
   const didInitialFetchRef = useRef(false);
   const lastSyncedDataVersionRef = useRef(dataVersion);
+  const [isLedgerModalVisible, setIsLedgerModalVisible] = useState(false);
+  const [ledgerAnchorFrame, setLedgerAnchorFrame] = useState<LedgerPickerAnchorFrame | null>(null);
+  const ledgerButtonRef = useRef<View>(null);
 
   useEffect(() => {
     void (async () => {
@@ -54,6 +75,38 @@ export default function StatsScreen() {
     }, [dataVersion, setLastTab, statsState.fetchStats]),
   );
 
+  const activeLedger = ledgers.find((ledger) => ledger.id === activeLedgerId);
+  const displayLedgerName = useMemo(() => {
+    const rawName = activeLedger?.name || '账本';
+    const chars = Array.from(rawName);
+    return chars.length > 6 ? `${chars.slice(0, 6).join('')}...` : rawName;
+  }, [activeLedger?.name]);
+
+  const recordCount = useMemo(() => statsState.stats.reduce((sum, item) => sum + item.count, 0), [statsState.stats]);
+  const categoryCount = statsState.stats.length;
+  const topCategory = statsState.stats[0];
+  const averageAmount = recordCount > 0 ? statsState.totalAmount / recordCount : 0;
+
+  const rangeLabel =
+    statsState.range === 'all'
+      ? '全部时间'
+      : statsState.range === 'year'
+        ? `${statsState.currentDate.getFullYear()}年`
+        : statsState.range === 'month'
+          ? `${statsState.currentDate.getFullYear()}年${statsState.currentDate.getMonth() + 1}月`
+          : '本周';
+
+  const totalLabel = statsState.type === 'expense' ? '总支出' : '总收入';
+  const summaryGradientColors: readonly [string, string] =
+    statsState.type === 'expense' ? [theme.homeAccentSoft, theme.homeAccent] : ['#D7E8D1', '#7FA16F'];
+  const summaryPillBg = statsState.type === 'expense' ? 'rgba(110, 125, 66, 0.12)' : 'rgba(255, 249, 241, 0.2)';
+  const summaryPillTextColor = statsState.type === 'expense' ? 'rgba(44, 52, 32, 0.86)' : '#F7F4EC';
+  const summaryMinorTextColor = statsState.type === 'expense' ? 'rgba(44, 52, 32, 0.72)' : 'rgba(255, 249, 241, 0.88)';
+  const summaryValueColor = statsState.type === 'expense' ? theme.text : '#FFF9F1';
+  const primaryAccent = statsState.type === 'expense' ? theme.homeAccent : theme.income;
+  const secondaryAccent = statsState.type === 'expense' ? theme.homeAccentSoft : '#E4F1E3';
+  const progressPalette = statsState.type === 'expense' ? [theme.homeAccent, '#F5A172', theme.homeBlue, theme.homeOliveSoft] : [theme.income, '#8DB07B', theme.homeBlue, '#A8BE88'];
+
   const openBillsByCategory = useCallback(
     (item: CategoryStat) => {
       const { startDate, endDate } = statsState.buildDateRange();
@@ -79,19 +132,37 @@ export default function StatsScreen() {
     [openBillsByCategory, statsState.stats],
   );
 
-  const rangeLabel =
-    statsState.range === 'all'
-      ? '全部时间'
-      : statsState.range === 'year'
-        ? `${statsState.currentDate.getFullYear()}年`
-        : statsState.range === 'month'
-          ? `${statsState.currentDate.getFullYear()}年${statsState.currentDate.getMonth() + 1}月`
-          : '本周';
+  const openBills = useCallback(() => {
+    router.push('/bills');
+  }, [router]);
 
-  const totalLabel = statsState.type === 'expense' ? '总支出' : '总收入';
+  const openLedgerPicker = useCallback(() => {
+    if (!ledgerButtonRef.current) {
+      setLedgerAnchorFrame(null);
+      setIsLedgerModalVisible(true);
+      return;
+    }
+
+    ledgerButtonRef.current.measureInWindow((x, y, width, height) => {
+      setLedgerAnchorFrame({ x, y, width, height });
+      setIsLedgerModalVisible(true);
+    });
+  }, []);
+
+  const renderSummaryMetric = (label: string, value: string) => (
+    <View key={label} style={styles.summaryMetricCard}>
+      <Text style={[styles.summaryMetricLabel, { color: summaryMinorTextColor }]}>{label}</Text>
+      <Text style={[styles.summaryMetricValue, { color: summaryValueColor }]} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  );
 
   const renderRankingItem = ({ item, index }: { item: CategoryStat; index: number }) => {
     const Icon = getIconComponent(item.icon);
+    const progressColor = progressPalette[index % progressPalette.length];
+    const rankBadgeColor = index === 0 ? secondaryAccent : index === 1 ? theme.homeBlueSoft : theme.homeSection;
+
     return (
       <Pressable
         style={[
@@ -103,33 +174,56 @@ export default function StatsScreen() {
         ]}
         onPress={() => openBillsByCategory(item)}
       >
-        <View style={styles.rankingLeft}>
-          <View style={[styles.rankBadge, { backgroundColor: index === 0 ? theme.homeAccentSoft : index === 1 ? theme.homeBlueSoft : theme.homeSection }]}>
-            <Text style={[styles.rankBadgeText, { color: theme.homeOlive }]}>{index + 1}</Text>
+        <View style={styles.rankingTopRow}>
+          <View style={styles.rankingLeft}>
+            <View style={[styles.rankBadge, { backgroundColor: rankBadgeColor }]}>
+              <Text style={[styles.rankBadgeText, { color: theme.homeOlive }]}>{index + 1}</Text>
+            </View>
+            <View style={[styles.iconBox, { backgroundColor: item.percentage > 35 ? secondaryAccent : theme.homeSection }]}>
+              <Icon size={18} color={theme.text} />
+            </View>
+            <View style={styles.rankingMeta}>
+              <Text style={[styles.rankingName, { color: theme.text }]} numberOfLines={1}>
+                {item.category}
+              </Text>
+              <Text style={[styles.rankingSubline, { color: theme.homeMuted }]}>
+                {item.count} 笔记录
+              </Text>
+            </View>
           </View>
-          <View style={[styles.iconBox, { backgroundColor: item.percentage > 40 ? '#FDE9DE' : item.percentage > 20 ? theme.homeBlueSoft : theme.homeSection }]}>
-            <Icon size={18} color={theme.text} />
-          </View>
-          <View style={styles.rankingMeta}>
-            <Text style={[styles.rankingName, { color: theme.text }]}>{item.category}</Text>
-            <Text style={[styles.rankingCount, { color: theme.homeMuted }]}>
-              {item.percentage.toFixed(1)}% · {item.count}笔
-            </Text>
+
+          <View style={styles.rankingAmountWrap}>
+            <Text style={[styles.rankingAmount, { color: theme.text }]}>{formatAmount(item.totalAmount)}</Text>
+            <Text style={[styles.rankingHint, { color: theme.homeOlive }]}>查看账单</Text>
           </View>
         </View>
 
-        <View style={styles.rankingRight}>
-          <Text style={[styles.rankingAmount, { color: theme.text }]}>{item.totalAmount.toFixed(2)}</Text>
-          <Text style={[styles.rankingLink, { color: theme.homeOlive }]}>查看账单</Text>
+        <View style={[styles.progressTrack, { backgroundColor: theme.homeSurfaceStrong }]}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${Math.max(Math.min(item.percentage, 100), 6)}%`,
+                backgroundColor: progressColor,
+              },
+            ]}
+          />
+        </View>
+
+        <View style={styles.rankingFooter}>
+          <Text style={[styles.rankingFooterText, { color: theme.homeMuted }]}>占比 {item.percentage.toFixed(1)}%</Text>
+          <Text style={[styles.rankingFooterText, { color: theme.homeMuted }]}>
+            {statsState.type === 'expense' ? '支出分类' : '收入分类'}
+          </Text>
         </View>
       </Pressable>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top + 10 }]}>
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.52)' }]} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.34)' }]} />
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
+      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.46)' }]} />
+      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowRight, { backgroundColor: 'rgba(171, 215, 251, 0.3)' }]} />
 
       <FlatList
         data={statsState.stats}
@@ -143,42 +237,62 @@ export default function StatsScreen() {
         ListHeaderComponent={
           <>
             <View style={styles.header}>
-              <Text style={[styles.headerEyebrow, { color: theme.homeMuted }]}>Insights</Text>
-              <Text style={[styles.headerTitle, { color: theme.homeOlive }]}>分类统计</Text>
-            </View>
-
-            <View style={[styles.controlCard, { backgroundColor: theme.homeSurface }]}>
-              <View style={styles.rangeBar}>
-                {(['all', 'year', 'month', 'week'] as TimeRange[]).map((range) => {
-                  const active = statsState.range === range;
-                  return (
-                    <Pressable
-                      key={range}
-                      onPress={() => {
-                        statsState.setRange(range);
-                        statsState.setCurrentDate(new Date());
-                      }}
-                      style={[
-                        styles.rangeBtn,
-                        {
-                          backgroundColor: active ? theme.homeAccent : theme.homeSurfaceStrong,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.rangeText, { color: active ? '#FFF' : theme.homeOlive }]}>
-                        {range === 'all' ? '总览' : range === 'year' ? '年度' : range === 'month' ? '月度' : '周度'}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+              <View ref={ledgerButtonRef} collapsable={false} style={styles.headerLedgerButtonWrap}>
+                <Pressable style={[styles.headerLedgerButton, { backgroundColor: theme.homeSurface }]} onPress={openLedgerPicker}>
+                  <Text style={[styles.headerLedgerName, { color: theme.text }]} numberOfLines={1}>
+                    {displayLedgerName}
+                  </Text>
+                  <ChevronRight size={16} color={theme.homeOlive} strokeWidth={2.5} />
+                </Pressable>
               </View>
 
-              <View style={styles.controlFooter}>
+              <View style={styles.headerIcons}>
+                <Pressable style={[styles.iconButton, { backgroundColor: theme.homeSurface }]} onPress={openBills}>
+                  <FileText size={20} color={theme.homeOlive} />
+                </Pressable>
+              </View>
+            </View>
+
+            <LinearGradient colors={summaryGradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.summaryCard}>
+              <View style={styles.summaryDecorLayer} pointerEvents="none">
+                <View style={styles.summaryOrbLarge} />
+                <View style={[styles.summaryOrbSmall, { backgroundColor: 'rgba(255, 249, 241, 0.22)' }]} />
+                <View style={[styles.summaryOrbBlue, { backgroundColor: 'rgba(171, 215, 251, 0.18)' }]} />
+              </View>
+
+              <View style={styles.summaryTopRow}>
+                <Text style={[styles.summaryOverviewLabel, { color: summaryMinorTextColor }]}>{rangeLabel}</Text>
+                <View style={[styles.summaryCountPill, { backgroundColor: summaryPillBg }]}>
+                  <Text style={[styles.summaryCountText, { color: summaryPillTextColor }]}>
+                    {statsState.type === 'expense' ? '支出视角' : '收入视角'}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={[styles.summaryLabel, { color: summaryMinorTextColor }]}>{totalLabel}</Text>
+              <Text style={[styles.summaryAmount, { color: summaryValueColor }]}>{formatAmount(statsState.totalAmount)}</Text>
+
+              <View style={styles.summaryMetricsGrid}>
+                {renderSummaryMetric('分类数', `${categoryCount} 类`)}
+                {renderSummaryMetric('记录数', `${recordCount} 笔`)}
+                {renderSummaryMetric('主力分类', topCategory?.category ?? '暂无')}
+              </View>
+            </LinearGradient>
+
+            <View style={[styles.controlCard, { backgroundColor: theme.homeSurface }]}>
+              <View style={styles.controlHeader}>
+                <View>
+                  <Text style={[styles.sectionEyebrow, { color: theme.homeMuted }]}>筛选</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>统计条件</Text>
+                </View>
                 <View style={[styles.periodChip, { backgroundColor: theme.homeSection }]}>
                   <Text style={[styles.periodChipLabel, { color: theme.homeMuted }]}>当前周期</Text>
                   <Text style={[styles.periodChipValue, { color: theme.text }]}>{rangeLabel}</Text>
                 </View>
+              </View>
 
+              <View style={styles.controlGroup}>
+                <Text style={[styles.controlGroupLabel, { color: theme.homeMuted }]}>收支类型</Text>
                 <View style={styles.typeSwitcher}>
                   <Pressable
                     onPress={() => statsState.setType('expense')}
@@ -205,13 +319,39 @@ export default function StatsScreen() {
                 </View>
               </View>
 
+              <View style={styles.controlGroup}>
+                <Text style={[styles.controlGroupLabel, { color: theme.homeMuted }]}>时间范围</Text>
+                <View style={styles.rangeBar}>
+                  {RANGE_OPTIONS.map((range) => {
+                    const active = statsState.range === range.value;
+                    return (
+                      <Pressable
+                        key={range.value}
+                        onPress={() => {
+                          statsState.setRange(range.value);
+                          statsState.setCurrentDate(new Date());
+                        }}
+                        style={[
+                          styles.rangeBtn,
+                          {
+                            backgroundColor: active ? primaryAccent : theme.homeSurfaceStrong,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.rangeText, { color: active ? '#FFF' : theme.homeOlive }]}>{range.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
               {statsState.range !== 'all' && (
-                <View style={styles.dateNav}>
-                  <Pressable style={[styles.navBtn, { backgroundColor: theme.homeSurfaceStrong }]} onPress={statsState.handlePrev}>
+                <View style={[styles.dateNav, { backgroundColor: theme.homeSurfaceStrong }]}>
+                  <Pressable style={styles.navBtn} onPress={statsState.handlePrev}>
                     <ChevronLeft size={18} color={theme.homeOlive} />
                   </Pressable>
                   <Text style={[styles.currentDateText, { color: theme.text }]}>{rangeLabel}</Text>
-                  <Pressable style={[styles.navBtn, { backgroundColor: theme.homeSurfaceStrong }]} onPress={statsState.handleNext}>
+                  <Pressable style={styles.navBtn} onPress={statsState.handleNext}>
                     <ChevronRight size={18} color={theme.homeOlive} />
                   </Pressable>
                 </View>
@@ -219,16 +359,13 @@ export default function StatsScreen() {
             </View>
 
             <View style={[styles.chartCard, { backgroundColor: theme.homeSurface }]}>
-              <View style={styles.chartHeader}>
+              <View style={styles.controlHeader}>
                 <View>
-                  <Text style={[styles.chartEyebrow, { color: theme.homeMuted }]}>Breakdown</Text>
-                  <Text style={[styles.chartTitle, { color: theme.text }]}>{totalLabel}</Text>
+                  <Text style={[styles.sectionEyebrow, { color: theme.homeMuted }]}>拆分</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>分类拆分</Text>
                 </View>
-                <View style={[styles.chartAmountPill, { backgroundColor: theme.homeSection }]}>
-                  <Text style={[styles.chartAmountLabel, { color: theme.homeMuted }]}>合计</Text>
-                  <Text style={[styles.chartAmountValue, { color: statsState.type === 'expense' ? theme.expense : theme.income }]}>
-                    {statsState.totalAmount.toFixed(2)}
-                  </Text>
+                <View style={[styles.chartCountPill, { backgroundColor: theme.homeSection }]}>
+                  <Text style={[styles.chartCountPillText, { color: theme.homeOlive }]}>前 5 类</Text>
                 </View>
               </View>
 
@@ -241,28 +378,63 @@ export default function StatsScreen() {
                 borderColor={theme.border}
                 totalAmount={statsState.totalAmount}
                 segments={statsState.segmentGeometry}
-                emptyText="暂无数据"
+                emptyText="暂无统计数据"
                 emptyTextColor={theme.homeMuted}
                 labelColor={theme.homeMuted}
                 valueColor={theme.text}
                 onSegmentPress={openBillsByCategoryId}
               />
+
+              <View style={styles.chartInsightsRow}>
+                <View style={[styles.chartInsightCard, { backgroundColor: theme.homeSection }]}>
+                  <Text style={[styles.chartInsightLabel, { color: theme.homeMuted }]}>最高占比</Text>
+                  <Text style={[styles.chartInsightValue, { color: theme.text }]} numberOfLines={1}>
+                    {topCategory ? `${topCategory.category} ${topCategory.percentage.toFixed(1)}%` : '暂无'}
+                  </Text>
+                </View>
+                <View style={[styles.chartInsightCard, { backgroundColor: theme.homeSection }]}>
+                  <Text style={[styles.chartInsightLabel, { color: theme.homeMuted }]}>笔均金额</Text>
+                  <Text style={[styles.chartInsightValue, { color: theme.text }]} numberOfLines={1}>
+                    {recordCount > 0 ? formatAmount(averageAmount) : '--'}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={[styles.chartHint, { color: theme.homeMuted }]}>点击扇区可直接查看对应账单。</Text>
             </View>
 
             <View style={styles.rankingHeader}>
-              <Text style={[styles.rankingHeaderEyebrow, { color: theme.homeMuted }]}>Ranking</Text>
-              <Text style={[styles.rankingHeaderTitle, { color: theme.text }]}>分类排行</Text>
+              <View>
+                <Text style={[styles.sectionEyebrow, { color: theme.homeMuted }]}>排行</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>分类排行</Text>
+              </View>
+              {categoryCount > 0 && (
+                <View style={[styles.rankingCountPill, { backgroundColor: theme.homeSurface }]}>
+                  <Text style={[styles.rankingCountPillText, { color: theme.homeOlive }]}>{categoryCount} 类</Text>
+                </View>
+              )}
             </View>
           </>
         }
         ListEmptyComponent={
           <View style={[styles.emptyList, { backgroundColor: theme.homeSurface }]}>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>暂无统计数据</Text>
-            <Text style={[styles.emptyHint, { color: theme.homeMuted }]}>先记几笔，统计图和排行才会出现。</Text>
+            <Text style={[styles.emptyHint, { color: theme.homeMuted }]}>先记几笔，分类拆分和排行会自动生成。</Text>
           </View>
         }
       />
 
+      <LedgerPickerModal
+        visible={isLedgerModalVisible}
+        ledgers={ledgers}
+        activeLedgerId={activeLedgerId}
+        anchorFrame={ledgerAnchorFrame}
+        onSelect={(id) => {
+          setActiveLedgerId(id);
+          setIsLedgerModalVisible(false);
+        }}
+        onClose={() => setIsLedgerModalVisible(false)}
+      />
     </View>
   );
 }
@@ -271,7 +443,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 10,
   },
   screenGlow: {
     position: 'absolute',
@@ -280,33 +451,157 @@ const styles = StyleSheet.create({
   screenGlowTop: {
     width: 220,
     height: 220,
-    top: 40,
-    left: -60,
+    top: 32,
+    left: -58,
   },
-  screenGlowBottom: {
-    width: 280,
-    height: 280,
-    bottom: 120,
-    right: -100,
+  screenGlowRight: {
+    width: 250,
+    height: 250,
+    top: 188,
+    right: -92,
   },
   listContent: {
     paddingBottom: 132,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingTop: 6,
+    paddingBottom: 12,
+    zIndex: 1,
+  },
+  headerLedgerButtonWrap: {
+    maxWidth: 196,
+    justifyContent: 'center',
+  },
+  headerLedgerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  headerLedgerName: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '800',
+    maxWidth: 132,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  summaryCard: {
+    borderRadius: 32,
+    padding: 24,
+    overflow: 'hidden',
     marginBottom: 16,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  headerEyebrow: {
-    fontSize: Typography.size.caption,
+  summaryDecorLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  summaryOrbLarge: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    right: -56,
+    top: -40,
+    backgroundColor: 'rgba(255, 249, 241, 0.16)',
+  },
+  summaryOrbSmall: {
+    position: 'absolute',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    left: -18,
+    bottom: 56,
+  },
+  summaryOrbBlue: {
+    position: 'absolute',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    right: 34,
+    bottom: -8,
+  },
+  summaryTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+    minHeight: 30,
+  },
+  summaryOverviewLabel: {
+    flex: 1,
+    fontSize: Typography.size.label,
+    lineHeight: Typography.lineHeight.label,
     fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 6,
   },
-  headerTitle: {
-    fontSize: 34,
-    lineHeight: 38,
+  summaryCountPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  summaryCountText: {
+    fontSize: Typography.size.footnote,
+    lineHeight: Typography.lineHeight.footnote,
+    fontWeight: '700',
+  },
+  summaryLabel: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '700',
+  },
+  summaryAmount: {
+    marginTop: 8,
+    fontSize: 36,
+    lineHeight: 40,
     fontWeight: '900',
     letterSpacing: -1,
+  },
+  summaryMetricsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+  },
+  summaryMetricCard: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 249, 241, 0.18)',
+  },
+  summaryMetricLabel: {
+    fontSize: Typography.size.caption,
+    lineHeight: Typography.lineHeight.caption,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  summaryMetricValue: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '800',
   },
   controlCard: {
     borderRadius: 30,
@@ -317,6 +612,65 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 18,
     elevation: 4,
+  },
+  controlHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  sectionEyebrow: {
+    fontSize: Typography.size.caption,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  sectionTitle: {
+    fontSize: Typography.size.titleLg + 8,
+    lineHeight: 30,
+    fontWeight: '900',
+    letterSpacing: -0.8,
+  },
+  periodChip: {
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minWidth: 92,
+  },
+  periodChipLabel: {
+    fontSize: Typography.size.caption,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  periodChipValue: {
+    fontSize: Typography.size.body,
+    fontWeight: '800',
+  },
+  controlGroup: {
+    marginTop: 16,
+  },
+  controlGroupLabel: {
+    fontSize: Typography.size.caption,
+    lineHeight: Typography.lineHeight.caption,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  typeSwitcher: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  typeBtn: {
+    flex: 1,
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typeText: {
+    fontSize: Typography.size.body,
+    fontWeight: '800',
   },
   rangeBar: {
     flexDirection: 'row',
@@ -334,48 +688,14 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.label,
     fontWeight: '800',
   },
-  controlFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 14,
-    alignItems: 'center',
-  },
-  periodChip: {
-    flex: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  periodChipLabel: {
-    fontSize: Typography.size.caption,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  periodChipValue: {
-    fontSize: Typography.size.body,
-    fontWeight: '800',
-  },
-  typeSwitcher: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  typeBtn: {
-    minWidth: 74,
-    minHeight: 42,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  typeText: {
-    fontSize: Typography.size.body,
-    fontWeight: '800',
-  },
   dateNav: {
-    marginTop: 14,
+    marginTop: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   navBtn: {
     width: 40,
@@ -399,61 +719,74 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 4,
   },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    alignItems: 'flex-start',
-    paddingHorizontal: 6,
-    marginBottom: 8,
+  chartCountPill: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  chartEyebrow: {
-    fontSize: Typography.size.caption,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  chartTitle: {
-    fontSize: Typography.size.titleLg,
-    fontWeight: '900',
-  },
-  chartAmountPill: {
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    alignItems: 'flex-end',
-  },
-  chartAmountLabel: {
-    fontSize: Typography.size.caption,
-    fontWeight: '600',
-  },
-  chartAmountValue: {
-    marginTop: 4,
-    fontSize: Typography.size.title,
+  chartCountPillText: {
+    fontSize: Typography.size.label,
     fontWeight: '800',
   },
-  rankingHeader: {
-    marginBottom: 10,
+  chartInsightsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
   },
-  rankingHeaderEyebrow: {
+  chartInsightCard: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  chartInsightLabel: {
     fontSize: Typography.size.caption,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  rankingHeaderTitle: {
-    fontSize: Typography.size.titleLg,
-    fontWeight: '900',
+  chartInsightValue: {
+    fontSize: Typography.size.body,
+    fontWeight: '800',
+  },
+  chartHint: {
+    marginTop: 12,
+    paddingHorizontal: 6,
+    fontSize: Typography.size.caption,
+    lineHeight: Typography.lineHeight.caption,
+    fontWeight: '600',
+  },
+  rankingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  rankingCountPill: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  rankingCountPillText: {
+    fontSize: Typography.size.label,
+    fontWeight: '800',
   },
   rankingItem: {
-    borderRadius: 26,
+    borderRadius: 28,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 14,
     marginBottom: 10,
+    shadowColor: '#A9B66D',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  rankingTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
   },
   rankingLeft: {
     flexDirection: 'row',
@@ -484,23 +817,46 @@ const styles = StyleSheet.create({
   },
   rankingName: {
     fontSize: Typography.size.body,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 2,
   },
-  rankingCount: {
+  rankingSubline: {
     fontSize: Typography.size.caption,
+    lineHeight: Typography.lineHeight.caption,
+    fontWeight: '600',
   },
-  rankingRight: {
+  rankingAmountWrap: {
     alignItems: 'flex-end',
-    paddingLeft: 12,
+    minWidth: 88,
   },
   rankingAmount: {
     fontSize: Typography.size.body,
     fontWeight: '800',
   },
-  rankingLink: {
+  rankingHint: {
     marginTop: 4,
     fontSize: Typography.size.caption,
+    fontWeight: '700',
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  rankingFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  rankingFooterText: {
+    fontSize: Typography.size.caption,
+    lineHeight: Typography.lineHeight.caption,
     fontWeight: '700',
   },
   emptyList: {
@@ -516,5 +872,6 @@ const styles = StyleSheet.create({
   },
   emptyHint: {
     fontSize: Typography.size.body,
+    textAlign: 'center',
   },
 });

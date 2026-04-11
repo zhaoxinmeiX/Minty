@@ -170,10 +170,10 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
   }, [stats, totalAmount]);
 
   const donutMetrics = useMemo(() => {
-    const size = Math.min(width - 32, 360);
+    const size = Math.min(Math.max(width - 92, 240), 320);
     const center = size / 2;
-    const outerRadius = size * 0.24;
-    const innerRadius = size * 0.16;
+    const outerRadius = size * 0.23;
+    const innerRadius = size * 0.15;
     return { size, center, outerRadius, innerRadius };
   }, []);
 
@@ -205,8 +205,8 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
 
     const rightItems = raw.filter((r) => r.isRight);
     const leftItems = raw.filter((r) => !r.isRight);
-    const minY = 16;
-    const maxY = donutMetrics.size - 16;
+    const minY = 20;
+    const maxY = donutMetrics.size - 20;
     const minGap = 18;
 
     const rightAdjustedY = distributeLabelY(
@@ -222,10 +222,11 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
       maxY,
     );
 
-    const rightEndX = donutMetrics.size - 76;
-    const leftEndX = 76;
-    const rightTextX = donutMetrics.size - 4;
-    const leftTextX = 4;
+    const labelInset = Math.max(62, donutMetrics.size * 0.23);
+    const rightEndX = donutMetrics.size - labelInset;
+    const leftEndX = labelInset;
+    const rightTextX = donutMetrics.size - 6;
+    const leftTextX = 6;
 
     const rightMap = new Map<string, number>();
     rightItems.forEach((item, index) => {

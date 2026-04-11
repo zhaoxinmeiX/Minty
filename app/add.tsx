@@ -7,7 +7,7 @@ import { Alert, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, Vie
 
 import { AmountInput } from '@/components/add/AmountInput';
 import { CategoryEditModal } from '@/components/add/CategoryEditModal';
-import { CategoryGrid } from '@/components/add/CategoryGrid';
+import { CATEGORY_GRID_COLUMN_COUNT, CategoryGrid } from '@/components/add/CategoryGrid';
 import { CategoryManager } from '@/components/add/CategoryManager';
 import { CategoryPopover } from '@/components/add/CategoryPopover';
 import { DateTimePickerModal } from '@/components/add/DateTimePickerModal';
@@ -258,7 +258,7 @@ export default function AddScreen() {
     date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }) + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 
   const result = useMemo(() => evaluateExpression(amount), [amount]);
-  const categoryRowCount = Math.ceil(categories.length / 6);
+  const categoryRowCount = Math.ceil(categories.length / CATEGORY_GRID_COLUMN_COUNT);
   const shouldScrollCategories = isCompactLayout ? categoryRowCount > 3 : categoryRowCount > 4;
   const fallbackRoute = TAB_ROUTES[lastTab as keyof typeof TAB_ROUTES] ?? TAB_ROUTES.index;
 
@@ -509,8 +509,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerIconCompact: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 16,
   },
   segmentControl: {

@@ -36,6 +36,11 @@ export function StatsDonutChart({
   valueColor = '#111827',
   emptyTextColor = '#6B7280',
 }: Props) {
+  const formattedTotalAmount = totalAmount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   if (segments.length === 0) {
     return (
       <View style={styles.emptyChart}>
@@ -48,6 +53,16 @@ export function StatsDonutChart({
     <View style={styles.chartBox}>
       <View style={[styles.pieWrap, { width: size, height: size }]}>
         <Svg width={size} height={size}>
+          <Circle
+            cx={center}
+            cy={center}
+            r={(outerRadius + innerRadius) / 2}
+            fill="none"
+            stroke={borderColor}
+            strokeOpacity={0.28}
+            strokeWidth={outerRadius - innerRadius}
+          />
+
           {segments.length === 1 && (
             <Circle
               cx={center}
@@ -76,7 +91,7 @@ export function StatsDonutChart({
         </Svg>
         <View style={styles.totalCenter}>
           <Text style={[styles.totalLabel, { color: labelColor }]}>合计</Text>
-          <Text style={[styles.totalValue, { color: valueColor }]}>{totalAmount.toFixed(2)}</Text>
+          <Text style={[styles.totalValue, { color: valueColor }]}>{formattedTotalAmount}</Text>
         </View>
       </View>
     </View>

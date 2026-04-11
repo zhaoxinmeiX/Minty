@@ -1,20 +1,19 @@
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { CircleX, Search, X } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { BillListRow, formatRecordAmount, getRecordDayKey } from '@/components/record/BillListRow';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
-import { RecordListItem } from '@/components/record/RecordListItem';
-import { RecordSectionHeader } from '@/components/record/RecordSectionHeader';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { deleteRecord, getRecordsForBillList } from '@/src/db/operations';
+import { deleteRecord, getRecordsForBillListAsync } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
-import { parseISODate } from '@/src/utils/date';
+import { groupRecordsByMonth, MonthlyRecordSection } from '@/src/utils/recordSections';
 
 export default function SearchScreen() {
   const db = useSQLiteContext();
@@ -25,128 +24,223 @@ export default function SearchScreen() {
   const bumpDataVersion = useStore((state) => state.bumpDataVersion);
   const { ledgers } = useLedgers();
   const activeLedger = ledgers.find((item) => item.id === activeLedgerId);
+  const ledgerName = activeLedger?.name || '家庭账本';
+  const requestIdRef = useRef(0);
 
   const [keyword, setKeyword] = useState('');
+  const [appliedKeyword, setAppliedKeyword] = useState('');
   const [records, setRecords] = useState<RecordItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchPending, setIsSearchPending] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<RecordItem | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
+  const trimmedAppliedKeyword = appliedKeyword.trim();
+  const hasKeyword = trimmedAppliedKeyword.length > 0;
 
-  const fetchRecords = useCallback(() => {
-    const result = getRecordsForBillList(db, {
-      ledgerId: activeLedgerId,
-      keyword,
-    });
-    setRecords(result);
-  }, [activeLedgerId, db, keyword]);
+  const fetchRecords = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
+    if (!trimmedAppliedKeyword) {
+      setRecords([]);
+      setIsSearching(false);
+      setIsSearchPending(false);
+      return;
+    }
+
+    setIsSearchPending(true);
+    setIsSearching(true);
+
+    try {
+      const result = await getRecordsForBillListAsync(db, {
+        ledgerId: activeLedgerId,
+        keyword: trimmedAppliedKeyword,
+      });
+
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setRecords(result);
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsSearching(false);
+        setIsSearchPending(false);
+      }
+    }
+  }, [activeLedgerId, db, trimmedAppliedKeyword]);
 
   useEffect(() => {
-    fetchRecords();
+    void fetchRecords();
   }, [fetchRecords]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchRecords();
+      void fetchRecords();
     }, [fetchRecords]),
   );
 
   const expenseTotal = useMemo(() => records.reduce((sum, item) => (item.type === 'expense' ? sum + item.amount : sum), 0), [records]);
 
-  const sections = useMemo(() => {
-    const groups = new Map<string, { data: RecordItem[]; expenseTotal: number }>();
+  const sections = useMemo<MonthlyRecordSection[]>(() => groupRecordsByMonth(records), [records]);
+  const handleSubmitKeyword = useCallback(() => {
+    const nextKeyword = keyword.trim();
 
-    records.forEach((item) => {
-      const date = parseISODate(item.created_at);
-      if (!date) return;
-      const title = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-      if (!groups.has(title)) {
-        groups.set(title, { data: [], expenseTotal: 0 });
-      }
-      const group = groups.get(title)!;
-      group.data.push(item);
-      if (item.type === 'expense') {
-        group.expenseTotal += item.amount;
-      }
-    });
+    if (nextKeyword === appliedKeyword) {
+      return;
+    }
 
-    return Array.from(groups.entries()).map(([title, group]) => ({
-      title,
-      data: group.data,
-      expenseTotal: group.expenseTotal,
-    }));
-  }, [records]);
+    requestIdRef.current += 1;
+    setIsSearchPending(nextKeyword.length > 0);
+    setAppliedKeyword(nextKeyword);
+  }, [appliedKeyword, keyword]);
+
+  const handleClearKeyword = useCallback(() => {
+    requestIdRef.current += 1;
+    setKeyword('');
+    setAppliedKeyword('');
+    setRecords([]);
+    setIsSearching(false);
+    setIsSearchPending(false);
+  }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top + 10 }]}>
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 8 }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.42)' }]} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.34)' }]} />
-
       <View style={styles.header}>
-        <View style={styles.headerTitleWrap}>
-          <Text style={[styles.headerEyebrow, { color: theme.homeMuted }]}>Search</Text>
-          <Text style={[styles.headerTitle, { color: theme.homeOlive }]}>搜索账单</Text>
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: theme.card,
+              borderColor: 'rgba(110, 125, 66, 0.12)',
+            },
+          ]}
+        >
+          <Search size={20} color={theme.homeMuted} />
+          <TextInput
+            value={keyword}
+            onChangeText={setKeyword}
+            placeholder="搜索分类、备注、金额"
+            placeholderTextColor={theme.homeMuted}
+            style={[styles.searchInput, { color: theme.text }]}
+            autoFocus
+            returnKeyType="search"
+            onSubmitEditing={handleSubmitKeyword}
+          />
+          {!!keyword && (
+            <Pressable onPress={handleClearKeyword} hitSlop={8}>
+              <CircleX size={18} color={theme.homeMuted} />
+            </Pressable>
+          )}
         </View>
-        <Pressable style={[styles.closeBtn, { backgroundColor: theme.homeSurface }]} onPress={() => router.back()}>
-          <X size={18} color={theme.homeOlive} />
+        <Pressable
+          style={({ pressed }) => [
+            styles.closeBtn,
+            {
+              backgroundColor: theme.homeSurface,
+            },
+            pressed && styles.closeBtnPressed,
+          ]}
+          onPress={() => router.back()}
+        >
+          <X size={20} color={theme.homeOlive} />
         </Pressable>
       </View>
 
-      <View style={[styles.searchBar, { backgroundColor: theme.homeSurface }]}>
-        <Search size={20} color={theme.homeMuted} />
-        <TextInput
-          value={keyword}
-          onChangeText={setKeyword}
-          placeholder="搜索分类、备注、金额"
-          placeholderTextColor={theme.homeMuted}
-          style={[styles.searchInput, { color: theme.text }]}
-          autoFocus
-          returnKeyType="search"
-        />
-        {!!keyword && (
-          <Pressable onPress={() => setKeyword('')} hitSlop={8}>
-            <CircleX size={18} color={theme.homeMuted} />
-          </Pressable>
-        )}
-      </View>
-
-      <View style={styles.summaryRow}>
-        <View style={[styles.summaryCard, { backgroundColor: theme.homeSurface }]}>
-          <Text style={[styles.summaryLabel, { color: theme.homeMuted }]}>结果数量</Text>
-          <Text style={[styles.summaryValue, { color: theme.text }]}>{records.length} 笔</Text>
-        </View>
-        <View style={[styles.summaryCard, { backgroundColor: theme.homeSection }]}>
-          <Text style={[styles.summaryLabel, { color: theme.homeMuted }]}>支出合计</Text>
-          <Text style={[styles.summaryValue, { color: theme.expense }]}>
-            {expenseTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </Text>
-        </View>
-      </View>
-
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id.toString()}
-        stickySectionHeadersEnabled={false}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        renderSectionHeader={({ section }) => <RecordSectionHeader title={section.title} total={section.expenseTotal} />}
-        renderItem={({ item }) => (
-          <RecordListItem
-            item={item}
-            showTime
-            onPress={(record) => {
-              setSelectedRecord(record);
-              setIsDetailVisible(true);
-            }}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={[styles.emptyCard, { backgroundColor: theme.homeSurface }]}>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>没有找到相关账单</Text>
-            <Text style={[styles.emptyText, { color: theme.homeMuted }]}>换个关键词，或者直接搜索金额和备注。</Text>
+      <View style={styles.listShell}>
+        {hasKeyword ? (
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryCount, { color: theme.homeMuted }]}>共 {records.length} 笔</Text>
+            <Text style={[styles.summaryAmount, { color: expenseTotal > 0 ? theme.expense : theme.homeMuted }]}>
+              - {formatRecordAmount(expenseTotal)}
+            </Text>
           </View>
-        }
-      />
+        ) : null}
+
+        <FlatList
+          data={hasKeyword ? sections : []}
+          keyExtractor={(item) => item.key}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 28 }, (!hasKeyword || sections.length === 0) && styles.listContentEmpty]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onScrollBeginDrag={Keyboard.dismiss}
+          renderItem={({ item: section }) => (
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionMetaRow}>
+                <View style={styles.sectionMetaLeft}>
+                  <View style={[styles.sectionMetaDot, { backgroundColor: theme.homeAccent }]} />
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>{section.title}</Text>
+                  <View style={[styles.sectionCountPill, { backgroundColor: 'rgba(110, 125, 66, 0.08)' }]}>
+                    <Text style={[styles.sectionCountText, { color: theme.homeMuted }]}>{section.data.length} 笔</Text>
+                  </View>
+                </View>
+                <Text style={[styles.sectionTotalText, { color: theme.text }]}>支 {formatRecordAmount(section.expenseTotal)}</Text>
+              </View>
+
+              <View
+                style={[
+                  styles.sectionCard,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: 'rgba(110, 125, 66, 0.08)',
+                  },
+                ]}
+              >
+                {section.data.map((record, index) => {
+                  const currentDayKey = getRecordDayKey(record.created_at);
+                  const previousDayKey = index > 0 ? getRecordDayKey(section.data[index - 1].created_at) : '';
+
+                  return (
+                    <BillListRow
+                      key={record.id}
+                      item={record}
+                      ledgerName={ledgerName}
+                      showDate={index === 0 || currentDayKey !== previousDayKey}
+                      showDivider={index < section.data.length - 1}
+                      onPress={(item) => {
+                        setSelectedRecord(item);
+                        setIsDetailVisible(true);
+                      }}
+                    />
+                  );
+                })}
+              </View>
+            </View>
+          )}
+          ListEmptyComponent={
+            isSearchPending ? null : hasKeyword ? (
+              <View
+                style={[
+                  styles.emptyCard,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: 'rgba(110, 125, 66, 0.08)',
+                  },
+                ]}
+              >
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>没有找到相关账单</Text>
+                <Text style={[styles.emptyText, { color: theme.homeMuted }]}>换个关键词，或者直接搜索金额和备注。</Text>
+              </View>
+            ) : (
+              <View style={styles.idleState}>
+                <Text style={[styles.idleTitle, { color: theme.homeOlive }]}>输入关键词开始搜索</Text>
+                <Text style={[styles.idleText, { color: theme.homeMuted }]}>搜索分类、备注或金额后，再展示结果。</Text>
+              </View>
+            )
+          }
+        />
+
+        {isSearchPending ? (
+          <View style={[styles.searchLoadingOverlay, { backgroundColor: 'rgba(255, 249, 241, 0.68)' }]}>
+            <View style={[styles.searchLoadingPanel, { backgroundColor: 'rgba(255, 249, 241, 0.96)', borderColor: 'rgba(110, 125, 66, 0.12)' }]}>
+              <ActivityIndicator size="small" color={theme.homeOlive} />
+              <Text style={[styles.searchLoadingText, { color: theme.homeMuted }]}>搜索中...</Text>
+            </View>
+          </View>
+        ) : null}
+      </View>
 
       <RecordDetailSheet
         visible={isDetailVisible}
@@ -165,7 +259,7 @@ export default function SearchScreen() {
           deleteRecord(db, id);
           bumpDataVersion();
           setIsDetailVisible(false);
-          fetchRecords();
+          void fetchRecords();
         }}
       />
     </View>
@@ -175,64 +269,32 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-  },
-  screenGlow: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  screenGlowTop: {
-    width: 200,
-    height: 200,
-    top: 44,
-    left: -48,
-  },
-  screenGlowBottom: {
-    width: 240,
-    height: 240,
-    bottom: 120,
-    right: -84,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-  },
-  headerTitleWrap: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  headerEyebrow: {
-    fontSize: Typography.size.caption,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  headerTitle: {
-    fontSize: 34,
-    lineHeight: 38,
-    fontWeight: '900',
-    letterSpacing: -1,
-  },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 6,
-  },
-  searchBar: {
-    height: 52,
-    borderRadius: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: 12,
     gap: 10,
     paddingHorizontal: 16,
-    marginBottom: 14,
+  },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeBtnPressed: {
+    backgroundColor: 'rgba(110, 125, 66, 0.08)',
+  },
+  searchBar: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
   },
   searchInput: {
     flex: 1,
@@ -240,30 +302,92 @@ const styles = StyleSheet.create({
   },
   summaryRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 6,
-  },
-  summaryCard: {
-    flex: 1,
-    borderRadius: 22,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
     paddingHorizontal: 16,
-    paddingVertical: 14,
   },
-  summaryLabel: {
-    fontSize: Typography.size.caption,
-    fontWeight: '600',
-    marginBottom: 6,
+  summaryCount: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '700',
   },
-  summaryValue: {
-    fontSize: Typography.size.title,
+  summaryAmount: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
     fontWeight: '800',
   },
+  searchLoadingText: {
+    fontSize: Typography.size.footnote,
+    lineHeight: Typography.lineHeight.footnote,
+    fontWeight: '700',
+  },
   listContent: {
-    paddingBottom: 40,
+    paddingTop: 2,
+  },
+  listContentEmpty: {
+    flexGrow: 1,
+  },
+  listShell: {
+    flex: 1,
+    position: 'relative',
+  },
+  sectionBlock: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
+  sectionMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
+  },
+  sectionMetaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    flexShrink: 1,
+  },
+  sectionMetaDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  sectionTitle: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '800',
+  },
+  sectionCountPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  sectionCountText: {
+    fontSize: Typography.size.footnote,
+    lineHeight: Typography.lineHeight.footnote,
+    fontWeight: '700',
+  },
+  sectionTotalText: {
+    fontSize: Typography.size.caption,
+    lineHeight: Typography.lineHeight.caption,
+  },
+  sectionCard: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowColor: '#A9B66D',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 1,
   },
   emptyCard: {
     marginTop: 32,
-    borderRadius: 28,
+    marginHorizontal: 16,
+    borderRadius: 24,
+    borderWidth: 1,
     paddingVertical: 28,
     paddingHorizontal: 22,
     alignItems: 'center',
@@ -275,5 +399,38 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: Typography.size.body,
+  },
+  idleState: {
+    paddingTop: 84,
+    paddingHorizontal: 28,
+    alignItems: 'center',
+  },
+  idleTitle: {
+    fontSize: Typography.size.title,
+    lineHeight: Typography.lineHeight.title,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  idleText: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    textAlign: 'center',
+  },
+  searchLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingHorizontal: 16,
+  },
+  searchLoadingPanel: {
+    minHeight: 40,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
   },
 });

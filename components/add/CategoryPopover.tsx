@@ -9,13 +9,14 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs, position, selectedSub, onSelect, onClose }) => {
   const theme = Colors.light;
   const accentColor = theme.accent;
+  const iconBackgroundColor = theme.homeSurfaceStrong;
   const shouldScroll = subs.length + 1 > 12;
 
   const bubbleContent = (
     <View style={styles.bubbleGrid}>
       <Pressable onPress={() => onSelect(null)} style={styles.bubbleItem}>
-        <View style={[styles.bubbleIcon, { backgroundColor: theme.popoverIconBg }, !selectedSub && { backgroundColor: accentColor }]}>
-          <LayoutGrid size={20} color={!selectedSub ? '#FFF' : theme.popoverText} />
+        <View style={[styles.bubbleIcon, { backgroundColor: iconBackgroundColor }]}>
+          <LayoutGrid size={20} color={!selectedSub ? accentColor : theme.popoverText} />
         </View>
         <Text style={[styles.bubbleText, { color: theme.popoverText }, !selectedSub && { color: accentColor, fontWeight: 'bold' }]}>全部</Text>
       </Pressable>
@@ -24,8 +25,8 @@ export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs,
         const isSubSel = selectedSub?.id === sub.id;
         return (
           <Pressable key={sub.id} onPress={() => onSelect(sub)} style={styles.bubbleItem}>
-            <View style={[styles.bubbleIcon, { backgroundColor: theme.popoverIconBg }, isSubSel && { backgroundColor: accentColor }]}>
-              <SubIcon size={20} color={isSubSel ? '#FFF' : theme.popoverText} />
+            <View style={[styles.bubbleIcon, { backgroundColor: iconBackgroundColor }]}>
+              <SubIcon size={20} color={isSubSel ? accentColor : theme.popoverText} />
             </View>
             <Text style={[styles.bubbleText, { color: theme.popoverText }, isSubSel && { color: accentColor, fontWeight: 'bold' }]}>{sub.name}</Text>
           </Pressable>
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(44,52,32,0.12)',
   },
   popoverBubble: {
-    width: '94%',
+    width: '80%',
     borderRadius: 24,
     paddingHorizontal: 14,
     paddingTop: 14,
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   bubbleItem: {
-    width: '16.66%', // 100% / 6 columns
+    width: '20%', // 100% / 5 columns
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -95,8 +96,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   bubbleText: {
-    fontSize: Typography.size.tiny,
+    fontSize: Typography.size.footnote,
+    lineHeight: 16,
     textAlign: 'center',
+    width: '100%',
   },
   bubbleScroll: {
     maxHeight: 280,

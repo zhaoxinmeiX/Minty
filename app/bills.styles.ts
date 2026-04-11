@@ -67,7 +67,58 @@ export const styles = StyleSheet.create({
   toolbarChipText: { fontSize: Typography.size.body, color: '#374151', fontWeight: '500' },
   toolbarChipActiveText: { color: '#DD724A' },
 
-  listContent: { paddingBottom: 50 },
+  listContent: { paddingTop: 2 },
+  sectionBlock: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
+  sectionMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
+  },
+  sectionMetaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    flexShrink: 1,
+  },
+  sectionMetaDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  sectionTitle: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '800',
+  },
+  sectionCountPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  sectionCountText: {
+    fontSize: Typography.size.footnote,
+    lineHeight: Typography.lineHeight.footnote,
+    fontWeight: '700',
+  },
+  sectionTotalText: {
+    fontSize: Typography.size.caption,
+    lineHeight: Typography.lineHeight.caption,
+  },
+  sectionCard: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowColor: '#A9B66D',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 1,
+  },
   monthHeader: {
     marginHorizontal: 16,
     marginTop: 0,

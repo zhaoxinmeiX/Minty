@@ -5,7 +5,7 @@ import { Category } from '@/src/db/schema';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-const COLUMN_COUNT = 6;
+export const CATEGORY_GRID_COLUMN_COUNT = 6;
 
 interface CategoryGridProps {
   categories: Category[];
@@ -20,14 +20,15 @@ interface CategoryGridProps {
 
 export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, selectedCategory, selectedSubCategory, onSelectMain, onManage, categoryRefs, accentColor, compact = false }) => {
   const theme = Colors.light;
-  const rows = Array.from({ length: Math.ceil(categories.length / COLUMN_COUNT) }, (_, rowIndex) => categories.slice(rowIndex * COLUMN_COUNT, (rowIndex + 1) * COLUMN_COUNT));
+  const rows = Array.from({ length: Math.ceil(categories.length / CATEGORY_GRID_COLUMN_COUNT) }, (_, rowIndex) =>
+    categories.slice(rowIndex * CATEGORY_GRID_COLUMN_COUNT, (rowIndex + 1) * CATEGORY_GRID_COLUMN_COUNT),
+  );
 
   const renderCategoryItem = (cat: Category) => {
-    const Icon = getIconComponent(cat.icon);
     const isSelected = selectedCategory?.id === cat.id;
     const hasSelectedSubCategory = isSelected && !!selectedSubCategory;
-    const combinedLabel = hasSelectedSubCategory ? `${cat.name}-${selectedSubCategory.name}` : cat.name;
-    const shouldSplitSelectedLabel = hasSelectedSubCategory && Array.from(combinedLabel).length > (compact ? 7 : 8);
+    const iconName = hasSelectedSubCategory ? selectedSubCategory.icon : cat.icon;
+    const Icon = getIconComponent(iconName);
     return (
       <View
         key={cat.id}
@@ -51,7 +52,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, selected
             </View>
           </View>
           <View style={[styles.labelBlock, compact && styles.labelBlockCompact]}>
-            {shouldSplitSelectedLabel ? (
+            {hasSelectedSubCategory ? (
               <>
                 <Text numberOfLines={1} style={[styles.catLabel, compact && styles.catLabelCompact, styles.catLabelLine, { color: accentColor, fontWeight: '700' }]}>
                   {cat.name}
@@ -62,7 +63,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, selected
               </>
             ) : (
               <Text numberOfLines={1} style={[styles.catLabel, compact && styles.catLabelCompact, { color: isSelected ? accentColor : theme.text }, isSelected && { fontWeight: '700' }]}>
-                {combinedLabel}
+                {cat.name}
               </Text>
             )}
           </View>
@@ -75,7 +76,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, selected
     <View style={[styles.gridContainer, compact && styles.gridContainerCompact]}>
       {rows.map((row, rowIndex) => (
         <View key={`row-${rowIndex}`} style={[styles.gridRow, compact && styles.gridRowCompact]}>
-          {Array.from({ length: COLUMN_COUNT }, (_, columnIndex) => {
+          {Array.from({ length: CATEGORY_GRID_COLUMN_COUNT }, (_, columnIndex) => {
             const category = row[columnIndex];
             if (!category) {
               return <View key={`empty-${rowIndex}-${columnIndex}`} style={[styles.catGridItem, compact && styles.catGridItemCompact]} />;
@@ -139,23 +140,23 @@ const styles = StyleSheet.create({
     height: 28,
   },
   catLabel: {
-    fontSize: Typography.size.footnote,
+    fontSize: Typography.size.caption,
     textAlign: 'center',
     width: '100%',
   },
   catLabelCompact: {
-    fontSize: Typography.size.tiny,
+    fontSize: Typography.size.footnote,
   },
   catLabelLine: {
-    lineHeight: 13,
+    lineHeight: 14,
   },
   labelBlock: {
-    minHeight: 28,
+    minHeight: 30,
     width: '100%',
     alignItems: 'center',
   },
   labelBlockCompact: {
-    minHeight: 26,
+    minHeight: 28,
   },
   pressable: {
     width: '92%',

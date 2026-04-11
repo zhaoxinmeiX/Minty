@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Dimensions, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
+const CATEGORY_POPOVER_WIDTH_RATIO = 0.84;
 
 export function useCategoryPopover() {
   const [isVisible, setIsVisible] = useState(false);
@@ -19,7 +20,7 @@ export function useCategoryPopover() {
     }
 
     ref.measureInWindow((x, y, w, h) => {
-      const popWidth = width * 0.9;
+      const popWidth = width * CATEGORY_POPOVER_WIDTH_RATIO;
       const targetCenterX = x + w / 2;
 
       const popLeft = Math.max(10, Math.min(targetCenterX - popWidth / 2, width - popWidth - 10));

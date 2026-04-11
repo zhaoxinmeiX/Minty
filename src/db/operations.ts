@@ -1,6 +1,12 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Category, Ledger, RecordItem } from './schema';
 
+const RECORD_ICON_SELECT = `COALESCE(sc.icon, c.icon, 'LayoutGrid') as icon`;
+const RECORD_CATEGORY_JOINS = `
+  LEFT JOIN categories c ON r.category_id = c.id
+  LEFT JOIN categories sc ON r.sub_category_id = sc.id
+`;
+
 const padMonth = (value: string) => value.padStart(2, '0');
 
 const formatDateOnly = (date: Date) => {
@@ -56,9 +62,9 @@ export const deleteLedger = (db: SQLiteDatabase, id: number) => {
 
 export const getRecordsByLedger = (db: SQLiteDatabase, ledgerId: number): RecordItem[] => {
   return db.getAllSync<RecordItem>(
-    `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+    `SELECT r.*, ${RECORD_ICON_SELECT}
      FROM records r
-     LEFT JOIN categories c ON r.category_id = c.id
+     ${RECORD_CATEGORY_JOINS}
      WHERE r.ledger_id = ?
      ORDER BY r.created_at DESC`,
     ledgerId,
@@ -67,9 +73,9 @@ export const getRecordsByLedger = (db: SQLiteDatabase, ledgerId: number): Record
 
 export const getRecordsByLedgerAsync = (db: SQLiteDatabase, ledgerId: number): Promise<RecordItem[]> => {
   return db.getAllAsync<RecordItem>(
-    `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+    `SELECT r.*, ${RECORD_ICON_SELECT}
      FROM records r
-     LEFT JOIN categories c ON r.category_id = c.id
+     ${RECORD_CATEGORY_JOINS}
      WHERE r.ledger_id = ?
      ORDER BY r.created_at DESC`,
     ledgerId,
@@ -79,9 +85,9 @@ export const getRecordsByLedgerAsync = (db: SQLiteDatabase, ledgerId: number): P
 export const getRecordsByLedgerAndMonth = (db: SQLiteDatabase, ledgerId: number, year: string, month: string): RecordItem[] => {
   const { start, end } = getMonthBounds(year, month);
   return db.getAllSync<RecordItem>(
-    `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+    `SELECT r.*, ${RECORD_ICON_SELECT}
      FROM records r
-     LEFT JOIN categories c ON r.category_id = c.id
+     ${RECORD_CATEGORY_JOINS}
      WHERE r.ledger_id = ? AND r.created_at >= ? AND r.created_at < ?
      ORDER BY r.created_at DESC`,
     ledgerId,
@@ -93,9 +99,9 @@ export const getRecordsByLedgerAndMonth = (db: SQLiteDatabase, ledgerId: number,
 export const getRecordsByLedgerAndMonthAsync = (db: SQLiteDatabase, ledgerId: number, year: string, month: string): Promise<RecordItem[]> => {
   const { start, end } = getMonthBounds(year, month);
   return db.getAllAsync<RecordItem>(
-    `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+    `SELECT r.*, ${RECORD_ICON_SELECT}
      FROM records r
-     LEFT JOIN categories c ON r.category_id = c.id
+     ${RECORD_CATEGORY_JOINS}
      WHERE r.ledger_id = ? AND r.created_at >= ? AND r.created_at < ?
      ORDER BY r.created_at DESC`,
     ledgerId,
@@ -107,9 +113,9 @@ export const getRecordsByLedgerAndMonthAsync = (db: SQLiteDatabase, ledgerId: nu
 export const getRecordsByLedgerInRangeAsync = async (db: SQLiteDatabase, ledgerId: number, startDate?: string, endDate?: string): Promise<RecordItem[]> => {
   const { start, end } = getDateBounds(startDate, endDate);
   let query = `
-    SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+    SELECT r.*, ${RECORD_ICON_SELECT}
     FROM records r
-    LEFT JOIN categories c ON r.category_id = c.id
+    ${RECORD_CATEGORY_JOINS}
     WHERE r.ledger_id = ?
   `;
   const params: Array<number | string> = [ledgerId];
@@ -141,6 +147,17 @@ export type BillListQueryParams = {
   keyword?: string;
 };
 
+export type BillListCursor = {
+  createdAt: string;
+  id: number;
+};
+
+export type BillListPageResult = {
+  records: RecordItem[];
+  hasMore: boolean;
+  nextCursor: BillListCursor | null;
+};
+
 export type BillListCategoryOption = {
   category_id: number;
   category: string;
@@ -151,26 +168,35 @@ type RecordMutationBase = Omit<RecordItem, 'id' | 'created_at' | 'icon'>;
 type RecordInsertData = RecordMutationBase & { created_at?: string };
 type RecordUpdateData = RecordMutationBase & { created_at: string };
 
-export const getRecordsForBillList = (db: SQLiteDatabase, params: BillListQueryParams): RecordItem[] => {
+type BillListQueryBuildOptions = {
+  cursor?: BillListCursor;
+  limit?: number;
+};
+
+const buildBillListQuery = (
+  params: BillListQueryParams,
+  options: BillListQueryBuildOptions = {},
+): { query: string; sqlParams: Array<string | number> } => {
   const { ledgerId, startDate, endDate, type = 'all', minAmount, maxAmount, categoryId, keyword } = params;
+  const { cursor, limit } = options;
+  const { start, end } = getDateBounds(startDate, endDate);
 
   let query = `
-    SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+    SELECT r.*, ${RECORD_ICON_SELECT}
     FROM records r
-    LEFT JOIN categories c ON r.category_id = c.id
+    ${RECORD_CATEGORY_JOINS}
     WHERE r.ledger_id = ?
   `;
-  const sqlParams: any[] = [ledgerId];
+  const sqlParams: Array<string | number> = [ledgerId];
 
-  if (startDate && endDate) {
-    query += ` AND date(r.created_at) BETWEEN ? AND ?`;
-    sqlParams.push(startDate, endDate);
-  } else if (startDate) {
-    query += ` AND date(r.created_at) >= ?`;
-    sqlParams.push(startDate);
-  } else if (endDate) {
-    query += ` AND date(r.created_at) <= ?`;
-    sqlParams.push(endDate);
+  if (start) {
+    query += ` AND r.created_at >= ?`;
+    sqlParams.push(start);
+  }
+
+  if (end) {
+    query += ` AND r.created_at < ?`;
+    sqlParams.push(end);
   }
 
   if (type === 'expense' || type === 'income') {
@@ -206,8 +232,51 @@ export const getRecordsForBillList = (db: SQLiteDatabase, params: BillListQueryP
     sqlParams.push(like, like, like, like);
   }
 
-  query += ` ORDER BY datetime(r.created_at) DESC`;
+  if (cursor) {
+    query += ` AND (r.created_at < ? OR (r.created_at = ? AND r.id < ?))`;
+    sqlParams.push(cursor.createdAt, cursor.createdAt, cursor.id);
+  }
+
+  query += ` ORDER BY r.created_at DESC, r.id DESC`;
+
+  if (typeof limit === 'number') {
+    query += ` LIMIT ?`;
+    sqlParams.push(limit);
+  }
+
+  return { query, sqlParams };
+};
+
+export const getRecordsForBillList = (db: SQLiteDatabase, params: BillListQueryParams): RecordItem[] => {
+  const { query, sqlParams } = buildBillListQuery(params);
   return db.getAllSync<RecordItem>(query, ...sqlParams);
+};
+
+export const getRecordsForBillListAsync = async (db: SQLiteDatabase, params: BillListQueryParams): Promise<RecordItem[]> => {
+  const { query, sqlParams } = buildBillListQuery(params);
+  return db.getAllAsync<RecordItem>(query, ...sqlParams);
+};
+
+export const getBillListPageAsync = async (
+  db: SQLiteDatabase,
+  params: BillListQueryParams & { limit: number; cursor?: BillListCursor | null },
+): Promise<BillListPageResult> => {
+  const pageSize = Math.max(1, params.limit);
+  const { query, sqlParams } = buildBillListQuery(params, {
+    cursor: params.cursor ?? undefined,
+    limit: pageSize + 1,
+  });
+
+  const rows = await db.getAllAsync<RecordItem>(query, ...sqlParams);
+  const hasMore = rows.length > pageSize;
+  const records = hasMore ? rows.slice(0, pageSize) : rows;
+  const lastRecord = records[records.length - 1];
+
+  return {
+    records,
+    hasMore,
+    nextCursor: hasMore && lastRecord ? { createdAt: lastRecord.created_at, id: lastRecord.id } : null,
+  };
 };
 
 export const getBillListCategoryOptions = (db: SQLiteDatabase, ledgerId: number): BillListCategoryOption[] => {
@@ -224,11 +293,25 @@ export const getBillListCategoryOptions = (db: SQLiteDatabase, ledgerId: number)
   );
 };
 
-export const getRecordById = (db: SQLiteDatabase, id: number): RecordItem | null => {
-  return db.getFirstSync<RecordItem>(
-    `SELECT r.*, IFNULL(c.icon, 'LayoutGrid') as icon
+export const getBillListCategoryOptionsAsync = (db: SQLiteDatabase, ledgerId: number): Promise<BillListCategoryOption[]> => {
+  return db.getAllAsync<BillListCategoryOption>(
+    `SELECT DISTINCT
+      r.category_id,
+      r.category,
+      IFNULL(c.icon, 'LayoutGrid') as icon
      FROM records r
      LEFT JOIN categories c ON r.category_id = c.id
+     WHERE r.ledger_id = ?
+     ORDER BY r.category_id ASC`,
+    ledgerId,
+  );
+};
+
+export const getRecordById = (db: SQLiteDatabase, id: number): RecordItem | null => {
+  return db.getFirstSync<RecordItem>(
+    `SELECT r.*, ${RECORD_ICON_SELECT}
+     FROM records r
+     ${RECORD_CATEGORY_JOINS}
      WHERE r.id = ?`,
     id,
   );
