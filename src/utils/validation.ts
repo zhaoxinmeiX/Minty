@@ -144,11 +144,6 @@ export const validateRecord = (
   }
 
   // 验证成员（可选）
-  if (data.member !== null && data.member !== undefined) {
-    if (typeof data.member !== 'string' || data.member.length > 100) {
-      errors.member = '成员名称过长（最多 100 字符）';
-    }
-  }
 
   return {
     isValid: Object.keys(errors).length === 0,

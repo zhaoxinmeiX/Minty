@@ -22,7 +22,6 @@ export type RecordItem = {
   category: string;
   sub_category: string | null;
   note: string | null;
-  member: string | null;
   ledger_id: number;
   created_at: string;
   icon: string;
@@ -60,7 +59,6 @@ CREATE TABLE IF NOT EXISTS records (
   category TEXT NOT NULL,
   sub_category TEXT,
   note TEXT,
-  member TEXT,
   ledger_id INTEGER NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (ledger_id) REFERENCES ledgers (id) ON DELETE CASCADE,

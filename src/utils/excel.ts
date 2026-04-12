@@ -1,4 +1,4 @@
-import { parseISODate } from '@/src/utils/date';
+import { formatDateTimeToISO, parseISODate } from '@/src/utils/date';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -18,14 +18,13 @@ export const exportLedgerToExcel = async (db: SQLiteDatabase, ledgerId: number, 
 
     // Format Data to match user's expected Chinese headers
     const data = records.map((r) => ({
-      时间: (parseISODate(r.created_at) ?? new Date(r.created_at)).toLocaleString(),
+      时间: formatDateTimeToISO(parseISODate(r.created_at) ?? new Date(r.created_at)),
       类型: r.type === 'income' ? '收入' : '支出',
       分类: r.category,
       二级分类: r.sub_category || '',
       金额: r.type === 'expense' ? -r.amount : r.amount,
       账本: ledgerName,
       备注: r.note || '',
-      成员: r.member || '',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -124,8 +123,9 @@ export const importExcelToLedger = async (db: SQLiteDatabase, currentLedgerId: n
           let createdAt: string | undefined = undefined;
           const rawDate = row['时间'] ?? row['Date'] ?? row['created_at'];
           if (rawDate) {
-            const dateObj = new Date(rawDate);
-            if (!isNaN(dateObj.getTime())) {
+            // Priority: parseISODate (standard format) -> new Date (Excel date object or generic string)
+            const dateObj = parseISODate(rawDate.toString()) ?? new Date(rawDate);
+            if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
               // Format using LOCAL time components to preserve the date as shown in Excel.
               // toISOString() would output UTC, which shifts dates backward for positive UTC offsets (e.g., NZST UTC+12).
               const yyyy = dateObj.getFullYear();
@@ -146,7 +146,6 @@ export const importExcelToLedger = async (db: SQLiteDatabase, currentLedgerId: n
             category: catName,
             sub_category: subCatName,
             note: (row['备注'] ?? row['Note'] ?? '').toString(),
-            member: (row['成员'] ?? row['Member'] ?? 'Me').toString(),
             ledger_id: targetLedgerId,
             created_at: createdAt,
           });

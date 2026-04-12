@@ -198,7 +198,6 @@ export default function AddScreen() {
       category: selectedCategory.name,
       sub_category: selectedSubCategory ? selectedSubCategory.name : null,
       note: note || null,
-      member: 'Me',
       ledger_id: activeLedgerId,
       created_at: formattedDate,
     };

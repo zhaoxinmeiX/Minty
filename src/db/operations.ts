@@ -494,23 +494,7 @@ export const ensureLedgerSync = (db: SQLiteDatabase, name: string): number => {
 export const addRecord = (db: SQLiteDatabase, data: RecordInsertData) => {
   if (data.created_at) {
     const result = db.runSync(
-      `INSERT INTO records (amount, type, category_id, sub_category_id, category, sub_category, note, member, ledger_id, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      data.amount,
-      data.type,
-      data.category_id,
-      data.sub_category_id,
-      data.category,
-      data.sub_category,
-      data.note,
-      data.member,
-      data.ledger_id,
-      data.created_at,
-    );
-    return result.lastInsertRowId;
-  } else {
-    const result = db.runSync(
-      `INSERT INTO records (amount, type, category_id, sub_category_id, category, sub_category, note, member, ledger_id)
+      `INSERT INTO records (amount, type, category_id, sub_category_id, category, sub_category, note, ledger_id, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       data.amount,
       data.type,
@@ -519,7 +503,21 @@ export const addRecord = (db: SQLiteDatabase, data: RecordInsertData) => {
       data.category,
       data.sub_category,
       data.note,
-      data.member,
+      data.ledger_id,
+      data.created_at,
+    );
+    return result.lastInsertRowId;
+  } else {
+    const result = db.runSync(
+      `INSERT INTO records (amount, type, category_id, sub_category_id, category, sub_category, note, ledger_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      data.amount,
+      data.type,
+      data.category_id,
+      data.sub_category_id,
+      data.category,
+      data.sub_category,
+      data.note,
       data.ledger_id,
     );
     return result.lastInsertRowId;
@@ -528,7 +526,7 @@ export const addRecord = (db: SQLiteDatabase, data: RecordInsertData) => {
 
 export const updateRecord = (db: SQLiteDatabase, id: number, data: RecordUpdateData) => {
   return db.runSync(
-    `UPDATE records SET amount = ?, type = ?, category_id = ?, sub_category_id = ?, category = ?, sub_category = ?, note = ?, member = ?, ledger_id = ?, created_at = ?
+    `UPDATE records SET amount = ?, type = ?, category_id = ?, sub_category_id = ?, category = ?, sub_category = ?, note = ?, ledger_id = ?, created_at = ?
      WHERE id = ?`,
     data.amount,
     data.type,
@@ -537,7 +535,6 @@ export const updateRecord = (db: SQLiteDatabase, id: number, data: RecordUpdateD
     data.category,
     data.sub_category,
     data.note,
-    data.member,
     data.ledger_id,
     data.created_at,
     id,
