@@ -7,6 +7,7 @@ import { ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, Text, Tex
 import { BillListRow, formatRecordAmount, getRecordDayKey } from '@/components/record/BillListRow';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { Colors } from '@/constants/Colors';
+import { ScreenBackground } from '@/components/common/ScreenBackground';
 import { Typography } from '@/constants/Typography';
 import { deleteRecord, getRecordsForBillListAsync } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
@@ -104,7 +105,8 @@ export default function SearchScreen() {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 8 }]}>
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top + 8 }]}>
+      <ScreenBackground />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
@@ -149,7 +151,7 @@ export default function SearchScreen() {
       </View>
 
       <View style={styles.listShell}>
-        {hasKeyword ? (
+        {hasKeyword && records.length > 0 && !isSearchPending ? (
           <View style={styles.summaryRow}>
             <Text style={[styles.summaryCount, { color: theme.homeMuted }]}>共 {records.length} 笔</Text>
             <Text style={[styles.summaryAmount, { color: expenseTotal > 0 ? theme.expense : theme.homeMuted }]}>
@@ -233,8 +235,8 @@ export default function SearchScreen() {
         />
 
         {isSearchPending ? (
-          <View style={[styles.searchLoadingOverlay, { backgroundColor: 'rgba(255, 249, 241, 0.68)' }]}>
-            <View style={[styles.searchLoadingPanel, { backgroundColor: 'rgba(255, 249, 241, 0.96)', borderColor: 'rgba(110, 125, 66, 0.12)' }]}>
+          <View style={[styles.searchLoadingOverlay, { backgroundColor: 'transparent' }]}>
+            <View style={[styles.searchLoadingPanel, { backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(110, 125, 66, 0.12)' }]}>
               <ActivityIndicator size="small" color={theme.homeOlive} />
               <Text style={[styles.searchLoadingText, { color: theme.homeMuted }]}>搜索中...</Text>
             </View>

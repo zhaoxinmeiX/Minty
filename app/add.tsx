@@ -13,6 +13,7 @@ import { CategoryPopover } from '@/components/add/CategoryPopover';
 import { DateTimePickerModal } from '@/components/add/DateTimePickerModal';
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { NumericPad } from '@/components/add/NumericPad';
+import { ScreenBackground } from '@/components/common/ScreenBackground';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { addRecord, getRecordById, updateRecord } from '@/src/db/operations';
@@ -287,10 +288,9 @@ export default function AddScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
+      <ScreenBackground />
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.34)' }]} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.24)' }]} />
 
       <View style={[styles.topSection, isCompactLayout && styles.topSectionCompact]}>
         <View style={[styles.header, isCompactLayout && styles.headerCompact]}>
@@ -466,22 +466,6 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  screenGlow: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  screenGlowTop: {
-    width: 190,
-    height: 190,
-    top: 56,
-    left: -54,
-  },
-  screenGlowBottom: {
-    width: 220,
-    height: 220,
-    bottom: 130,
-    right: -80,
   },
   topSection: {
     paddingHorizontal: 18,

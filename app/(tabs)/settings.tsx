@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { BookText, ChevronRight, CircleEllipsis, Database, User } from 'lucide-react-native';
 import React, { useCallback } from 'react';
@@ -48,34 +47,26 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
 
       <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerSpacer}>
-          <Pressable onPress={handleEditNickname}>
-            <LinearGradient
-              colors={[theme.homeBackground, theme.homeOliveSoft]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.profileHero, { paddingTop: insets.top + 32 }]}
-            >
-              <View style={styles.summaryDecorLayer} pointerEvents="none">
-                <View style={styles.summaryOrbLarge} />
-                <View style={[styles.summaryOrbSmall, { backgroundColor: 'rgba(255, 249, 241, 0.26)' }]} />
-                <View style={[styles.summaryOrbBlue, { backgroundColor: 'rgba(171, 215, 251, 0.16)' }]} />
-              </View>
-
-              <View style={[styles.profileAvatar, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                <User size={32} color="#FFF" />
-              </View>
-              <View style={styles.profileInfo}>
-                <Text style={[styles.profileName, { color: '#FFF' }]}>{nickname}</Text>
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </View>
-
-        <View style={[styles.content, { backgroundColor: theme.background }]}>
+        <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
+          
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: theme.homeMuted }]}>账户</Text>
+            <View style={[styles.sectionCard, { backgroundColor: theme.homeSurface }]}>
+              <Pressable style={styles.listItem} onPress={handleEditNickname}>
+                <View style={[styles.profileAvatar, { backgroundColor: 'rgba(110, 125, 66, 0.08)', marginRight: 12 }]}>
+                  <User size={24} color={theme.homeOlive} />
+                </View>
+                <View style={styles.listTextWrap}>
+                  <Text style={[styles.listTitle, { color: theme.text, fontSize: 18 }]}>{nickname}</Text>
+                  <Text style={[styles.listHint, { color: theme.homeMuted }]}>点击修改记录名称</Text>
+                </View>
+                <ChevronRight size={18} color={theme.homeOlive} />
+              </Pressable>
+            </View>
+          </View>
 
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: theme.homeMuted }]}>数据</Text>
@@ -136,71 +127,14 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 24,
     paddingBottom: 132,
-    marginTop: -32,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-  },
-  headerSpacer: {
-    marginBottom: 0,
-  },
-  profileHero: {
-    paddingHorizontal: 24,
-    paddingBottom: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 8,
-    overflow: 'hidden',
-  },
-  summaryDecorLayer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  summaryOrbLarge: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    right: -56,
-    top: -40,
-    backgroundColor: 'rgba(255, 249, 241, 0.16)',
-  },
-  summaryOrbSmall: {
-    position: 'absolute',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    left: -18,
-    bottom: 56,
-  },
-  summaryOrbBlue: {
-    position: 'absolute',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    right: 34,
-    bottom: -8,
   },
   profileAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -0.5,
   },
   divider: {
     height: 1,

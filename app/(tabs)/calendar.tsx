@@ -349,9 +349,7 @@ export default function CalendarScreen() {
   }, [dayRecords, selectedDate]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.52)' }]} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowRight, { backgroundColor: 'rgba(171, 215, 251, 0.36)' }]} />
+    <View style={[styles.container, { backgroundColor: 'transparent', paddingTop: insets.top }]}>
 
       <View style={styles.header}>
         <View ref={ledgerButtonRef} collapsable={false} style={styles.headerLedgerButtonWrap}>
@@ -515,22 +513,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
-  },
-  screenGlow: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  screenGlowTop: {
-    width: 210,
-    height: 210,
-    top: 28,
-    left: -54,
-  },
-  screenGlowRight: {
-    width: 250,
-    height: 250,
-    top: 180,
-    right: -94,
   },
   header: {
     flexDirection: 'row',

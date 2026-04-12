@@ -367,9 +367,7 @@ export default function RecordsScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.42)' }]} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowRight, { backgroundColor: 'rgba(171, 215, 251, 0.22)' }]} />
+    <View style={[styles.container, { backgroundColor: 'transparent', paddingTop: insets.top }]}>
 
       {renderFixedHeader()}
 
@@ -500,22 +498,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 18,
     elevation: 3,
-  },
-  screenGlow: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  screenGlowTop: {
-    width: 220,
-    height: 220,
-    top: 36,
-    left: -56,
-  },
-  screenGlowRight: {
-    width: 230,
-    height: 230,
-    top: 160,
-    right: -82,
   },
   topHeader: {
     flexDirection: 'row',

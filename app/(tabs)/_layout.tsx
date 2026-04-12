@@ -32,7 +32,7 @@ export default function TabLayout() {
           lazy: false,
           animation: 'none',
           sceneStyle: {
-            backgroundColor: themeColors.homeBackground,
+            backgroundColor: 'transparent',
           },
           tabBarActiveTintColor: themeColors.homeOlive,
           tabBarInactiveTintColor: themeColors.homeMuted,

@@ -221,9 +221,7 @@ export default function StatsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.46)' }]} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowRight, { backgroundColor: 'rgba(171, 215, 251, 0.3)' }]} />
+    <View style={[styles.container, { backgroundColor: 'transparent', paddingTop: insets.top }]}>
 
       <FlatList
         data={statsState.stats}
@@ -443,22 +441,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-  },
-  screenGlow: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  screenGlowTop: {
-    width: 220,
-    height: 220,
-    top: 32,
-    left: -58,
-  },
-  screenGlowRight: {
-    width: 250,
-    height: 250,
-    top: 188,
-    right: -92,
   },
   listContent: {
     paddingBottom: 132,

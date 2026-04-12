@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ExportDataModal } from '@/components/settings/ExportDataModal';
 import { Colors } from '@/constants/Colors';
+import { ScreenBackground } from '@/components/common/ScreenBackground';
 import { Typography } from '@/constants/Typography';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
@@ -32,9 +33,8 @@ export default function DataManagementScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
+      <ScreenBackground />
       <Stack.Screen options={{ headerShown: false }} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.48)' }]} />
-      <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.34)' }]} />
 
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
@@ -83,22 +83,6 @@ export default function DataManagementScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  screenGlow: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  screenGlowTop: {
-    width: 210,
-    height: 210,
-    top: 56,
-    left: -46,
-  },
-  screenGlowBottom: {
-    width: 260,
-    height: 260,
-    bottom: 100,
-    right: -96,
   },
   header: {
     height: 54,

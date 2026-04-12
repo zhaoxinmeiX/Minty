@@ -7,6 +7,8 @@ import { SQLiteDatabase, SQLiteProvider } from 'expo-sqlite';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import { View, StyleSheet } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -150,16 +152,58 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  const themeColors = Colors.light;
+
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="data-management" options={{ headerShown: false }} />
-          <Stack.Screen name="ledgers" options={{ headerShown: false }} />
-        </Stack>
+        <View style={[styles.rootContainer, { backgroundColor: themeColors.homeBackground }]}>
+          <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.42)' }]} />
+          <View pointerEvents="none" style={[styles.screenGlow, styles.screenGlowRight, { backgroundColor: 'rgba(171, 215, 251, 0.22)' }]} />
+          
+          <Stack
+            screenOptions={{
+              animation: 'fade_from_bottom',
+            }}
+          >
+            <Stack.Screen 
+              name="(tabs)" 
+              options={{ 
+                headerShown: false,
+                contentStyle: { backgroundColor: 'transparent' }
+              }} 
+            />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="data-management" options={{ headerShown: false, animation: 'slide_from_right' }} />
+            <Stack.Screen name="ledgers" options={{ headerShown: false, animation: 'slide_from_right' }} />
+            <Stack.Screen name="search" options={{ headerShown: false, animation: 'slide_from_right' }} />
+            <Stack.Screen name="bills" options={{ headerShown: false, animation: 'slide_from_right' }} />
+            <Stack.Screen name="add" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+          </Stack>
+        </View>
       </SQLiteProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+  },
+  screenGlow: {
+    position: 'absolute',
+    borderRadius: 999,
+  },
+  screenGlowTop: {
+    width: 220,
+    height: 220,
+    top: 36,
+    left: -56,
+  },
+  screenGlowRight: {
+    width: 230,
+    height: 230,
+    top: 160,
+    right: -82,
+  },
+});

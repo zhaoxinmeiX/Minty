@@ -9,6 +9,7 @@ import { BillsTopBar } from '@/components/bills/BillsTopBar';
 import { BillListRow, formatRecordAmount, getRecordDayKey } from '@/components/record/BillListRow';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { Colors } from '@/constants/Colors';
+import { ScreenBackground } from '@/components/common/ScreenBackground';
 import { Typography } from '@/constants/Typography';
 import {
   BillListCursor,
@@ -322,9 +323,8 @@ export default function BillsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: stableInsets.top }]}>
+      <ScreenBackground />
       <Stack.Screen options={{ headerShown: false }} />
-      <View pointerEvents="none" style={[localStyles.screenGlow, localStyles.screenGlowTop, { backgroundColor: 'rgba(252, 206, 180, 0.42)' }]} />
-      <View pointerEvents="none" style={[localStyles.screenGlow, localStyles.screenGlowBottom, { backgroundColor: 'rgba(171, 215, 251, 0.34)' }]} />
 
       <BillsTopBar
         searchOpen={searchOpen}
@@ -430,8 +430,8 @@ export default function BillsScreen() {
         />
 
         {isSearchPending ? (
-          <View style={[localStyles.searchLoadingOverlay, { backgroundColor: 'rgba(255, 249, 241, 0.68)' }]}>
-            <View style={[localStyles.searchLoadingPanel, { backgroundColor: 'rgba(255, 249, 241, 0.96)', borderColor: 'rgba(110, 125, 66, 0.12)' }]}>
+          <View style={[localStyles.searchLoadingOverlay, { backgroundColor: 'transparent' }]}>
+            <View style={[localStyles.searchLoadingPanel, { backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(110, 125, 66, 0.12)' }]}>
               <ActivityIndicator size="small" color={theme.homeOlive} />
               <Text style={[localStyles.searchLoadingText, { color: theme.homeMuted }]}>搜索中...</Text>
             </View>
@@ -513,22 +513,6 @@ export default function BillsScreen() {
 }
 
 const localStyles = StyleSheet.create({
-  screenGlow: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  screenGlowTop: {
-    width: 200,
-    height: 200,
-    top: 54,
-    left: -48,
-  },
-  screenGlowBottom: {
-    width: 240,
-    height: 240,
-    bottom: 120,
-    right: -84,
-  },
   emptyCard: {
     marginHorizontal: 16,
     marginTop: 28,
