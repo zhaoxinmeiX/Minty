@@ -144,6 +144,17 @@ export default function BillsScreen() {
     [activeLedgerId, appliedKeyword, filters.categoryId, filters.endDate, filters.maxAmount, filters.minAmount, filters.startDate, filters.type],
   );
 
+  const hasFilters = useMemo(() => {
+    return (
+      filters.type !== 'all' ||
+      !!filters.startDate ||
+      !!filters.endDate ||
+      filters.minAmount !== undefined ||
+      filters.maxAmount !== undefined ||
+      filters.categoryId !== undefined
+    );
+  }, [filters]);
+
   const fetchCategoryOptions = useCallback(async () => {
     const requestId = ++categoryRequestIdRef.current;
     const result = await getBillListCategoryOptionsAsync(db, activeLedgerId);
@@ -332,6 +343,7 @@ export default function BillsScreen() {
         ledgerName={activeLedger?.name || '家庭账本'}
         ledgerTriggerRef={ledgerButtonRef}
         showFilters={showFilters}
+        hasFilters={hasFilters}
         onBack={() => router.back()}
         onKeywordChange={setKeyword}
         onSubmitKeyword={handleKeywordSubmit}

@@ -19,6 +19,7 @@ type Props = {
   onOpenSearch: () => void;
   onOpenLedgerPicker: () => void;
   onToggleFilters: () => void;
+  hasFilters: boolean;
 };
 
 export function BillsTopBar({
@@ -35,6 +36,7 @@ export function BillsTopBar({
   onOpenSearch,
   onOpenLedgerPicker,
   onToggleFilters,
+  hasFilters,
 }: Props) {
   const theme = Colors.light;
   const handleOpenLedgerPicker = () => {
@@ -46,6 +48,8 @@ export function BillsTopBar({
     Keyboard.dismiss();
     onToggleFilters();
   };
+
+  const lightGray = 'rgba(0, 0, 0, 0.05)';
 
   return (
     <>
@@ -96,7 +100,7 @@ export function BillsTopBar({
       <View style={styles.toolbar}>
         <View style={styles.toolbarLeft}>
           <View ref={ledgerTriggerRef} collapsable={false}>
-            <Pressable style={[styles.toolbarChip, { backgroundColor: theme.homeSurface }]} onPress={handleOpenLedgerPicker}>
+            <Pressable style={[styles.toolbarChip, { backgroundColor: lightGray }]} onPress={handleOpenLedgerPicker}>
               <Text style={[styles.toolbarChipText, { color: theme.text }]} numberOfLines={1}>
                 {ledgerName}
               </Text>
@@ -110,13 +114,21 @@ export function BillsTopBar({
             styles.toolbarChip,
             styles.toolbarChipRight,
             {
-              backgroundColor: showFilters ? theme.homeSection : theme.homeSurface,
+              backgroundColor: showFilters ? theme.homeSection : lightGray,
             },
           ]}
           onPress={handleToggleFilters}
         >
-          <Text style={[styles.toolbarChipText, { color: showFilters ? theme.homeOlive : theme.text }]}>筛选</Text>
-          <SlidersHorizontal size={16} color={theme.homeOlive} />
+          <Text
+            style={[
+              styles.toolbarChipText,
+              { color: hasFilters ? theme.homeAccent : showFilters ? theme.homeOlive : theme.text },
+              hasFilters && { fontWeight: '800' },
+            ]}
+          >
+            筛选
+          </Text>
+          <SlidersHorizontal size={16} color={hasFilters ? theme.homeAccent : theme.homeOlive} />
         </Pressable>
       </View>
     </>
@@ -193,8 +205,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toolbarChip: {
-    minHeight: 42,
-    borderRadius: 21,
+    minHeight: 32,
+    borderRadius: 16,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -206,6 +218,5 @@ const styles = StyleSheet.create({
   },
   toolbarChipText: {
     fontSize: Typography.size.label,
-    fontWeight: '700',
   },
 });

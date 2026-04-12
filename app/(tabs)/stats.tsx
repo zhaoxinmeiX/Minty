@@ -138,7 +138,7 @@ export default function StatsScreen() {
     const diff = d.date() - day + (day === 0 ? -6 : 1);
     const monday = d.date(diff);
     const sunday = monday.add(6, 'day');
-    return `${monday.format('M/D')} - ${sunday.format('M/D')}`;
+    return `${monday.format('M月D日')}-${sunday.format('M月D日')}`;
   };
 
   const rangeNavLabel = useMemo(() => {
@@ -342,11 +342,6 @@ export default function StatsScreen() {
             </View>
           </>
         }
-        ListFooterComponent={
-          categoryCount > 0 ? (
-            <View style={styles.categoryListFooter} />
-          ) : null
-        }
       />
 
       <LedgerPickerModal
@@ -543,12 +538,6 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 2,
-  },
-  categoryListFooter: {
-    height: 32,
-    backgroundColor: Colors.light.homeSurface,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
   },
   emptyContainer: {
     backgroundColor: Colors.light.homeSurface,
