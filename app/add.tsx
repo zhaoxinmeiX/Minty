@@ -44,7 +44,7 @@ export default function AddScreen() {
   const setSelectedDateContext = useStore((state) => state.setSelectedDateContext);
   const lastTab = useStore((state) => state.lastTab);
   const bumpDataVersion = useStore((state) => state.bumpDataVersion);
-  const { id, mode } = useLocalSearchParams<{ id: string; mode: string }>();
+  const { id, mode, date: paramDate } = useLocalSearchParams<{ id: string; mode: string; date?: string }>();
   const isEdit = mode === 'edit';
   const isCopy = mode === 'copy';
   const isCompactLayout = screenHeight <= 860;
@@ -73,16 +73,18 @@ export default function AddScreen() {
         setSelectedCategory(null);
         setSelectedSubCategory(null);
 
-        if (selectedDateContext) {
+        const targetDateStr = paramDate || selectedDateContext;
+
+        if (targetDateStr) {
           const newDate = new Date();
-          const [y, m, d] = selectedDateContext.split('-').map(Number);
+          const [y, m, d] = targetDateStr.split('-').map(Number);
           newDate.setFullYear(y, m - 1, d);
           setDate(newDate);
         } else {
           setDate(new Date());
         }
       }
-    }, [isEdit, isCopy, selectedDateContext]),
+    }, [isEdit, isCopy, paramDate, selectedDateContext]),
   );
 
   const { categories, add: addCat, update: updateCat, getSubs } = useCategories(type);

@@ -153,7 +153,6 @@ export default function RecordsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setSelectedDateContext(null);
       setLastTab('index');
 
       if (!hasFocusedRef.current) {
@@ -260,6 +259,7 @@ export default function RecordsScreen() {
   };
 
   const openAddPage = () => {
+    setSelectedDateContext(null);
     router.push('/add');
   };
 

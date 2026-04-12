@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Calendar as CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react-native';
+import { Calendar as CalendarIcon, ChevronDown, ChevronRight, Plus } from 'lucide-react-native';
 import React, { startTransition, useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, InteractionManager, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { CalendarList, DateData } from 'react-native-calendars';
@@ -167,7 +168,7 @@ export default function CalendarScreen() {
       });
 
       return () => task.cancel();
-    }, [currentMonth, dataVersion, fetchMonthSummaries, fetchRecordsForMonth, setLastTab]),
+    }, [currentMonth, dataVersion, fetchMonthSummaries, fetchRecordsForMonth, selectedDate, setSelectedDateContext, setLastTab]),
   );
 
   React.useEffect(() => {
@@ -205,6 +206,10 @@ export default function CalendarScreen() {
       setIsLedgerModalVisible(true);
     });
   };
+
+  const openAddPage = useCallback(() => {
+    router.push({ pathname: '/add', params: { date: selectedDate } });
+  }, [router, selectedDate]);
 
   const { calendarWidth, calendarBodyHeight, dayCellSize } = useMemo(() => {
     const contentWidth = windowWidth - SCREEN_HORIZONTAL_PADDING * 2 - CALENDAR_SHELL_HORIZONTAL_PADDING * 2;
@@ -488,6 +493,19 @@ export default function CalendarScreen() {
           ]);
         }}
       />
+
+      <Pressable accessibilityRole="button" onPress={openAddPage} style={styles.fabWrap}>
+        {({ pressed }) => (
+          <LinearGradient
+            colors={[theme.homeAccent, '#E4743F']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.fab, pressed && styles.fabPressed]}
+          >
+            <Plus size={24} color="#FFF" strokeWidth={2.8} />
+          </LinearGradient>
+        )}
+      </Pressable>
     </View>
   );
 }
@@ -657,5 +675,26 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: Typography.size.body,
+  },
+  fabWrap: {
+    position: 'absolute',
+    right: 20,
+    bottom: 112,
+    borderRadius: 999,
+  },
+  fab: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    shadowColor: '#D67245',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fabPressed: {
+    transform: [{ scale: 0.98 }],
   },
 });
