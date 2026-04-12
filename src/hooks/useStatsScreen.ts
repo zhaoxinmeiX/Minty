@@ -41,7 +41,7 @@ export type SegmentGeometry = {
   textAnchor: 'start' | 'end';
 };
 
-const CHART_COLORS = ['#F98C58', '#8DB07B', '#ABD7FB', '#F7C48C', '#C9D99A'];
+const CHART_COLORS = ['#F98C58', '#8DB07B', '#ABD7FB', '#F7C48C', '#C9D99A', '#92A8D1', '#F7CAC9', '#B5EAD7', '#FF9AA2', '#E2F0CB'];
 
 const polarToCartesian = (cx: number, cy: number, r: number, angleDeg: number) => {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -152,6 +152,8 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
     if (requestId !== requestIdRef.current) return;
 
     startTransition(() => {
+      // Data is already sorted by amount from getCategoryStatsAsync usually, 
+      // but we can ensure it here if needed.
       setStats(data);
     });
   }, [currentDate, db, ledgerId, range, type]);
@@ -159,7 +161,7 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
   const totalAmount = useMemo(() => stats.reduce((acc, curr) => acc + curr.totalAmount, 0), [stats]);
 
   const chartData = useMemo<ChartSegment[]>(() => {
-    return stats.slice(0, 5).map((item, index) => ({
+    return stats.map((item, index) => ({
       name: item.category,
       categoryId: item.category_id,
       amount: item.totalAmount,
@@ -170,23 +172,27 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
   }, [stats, totalAmount]);
 
   const donutMetrics = useMemo(() => {
-    const size = Math.min(Math.max(width - 92, 240), 320);
-    const center = size / 2;
-    const outerRadius = size * 0.23;
-    const innerRadius = size * 0.15;
-    return { size, center, outerRadius, innerRadius };
-  }, []);
+    // Width fills the container (approx screen width - padding 24*2)
+    const chartWidth = Math.max(width - 72, 300);
+    // Height stays low as requested
+    const chartHeight = 180;
+    const centerX = chartWidth / 2;
+    const centerY = chartHeight / 2;
+    const outerRadius = 72;
+    const innerRadius = 50;
+    return { width: chartWidth, height: chartHeight, centerX, centerY, outerRadius, innerRadius };
+  }, [width]);
 
   const segmentGeometry = useMemo<SegmentGeometry[]>(() => {
     let startAngle = 0;
     const raw = chartData.map((item) => {
       const sweep = (item.percentage / 100) * 360;
       const endAngle = startAngle + sweep;
-      const path = donutSegmentPath(donutMetrics.center, donutMetrics.center, donutMetrics.outerRadius, donutMetrics.innerRadius, startAngle, endAngle);
+      const path = donutSegmentPath(donutMetrics.centerX, donutMetrics.centerY, donutMetrics.outerRadius, donutMetrics.innerRadius, startAngle, endAngle);
 
       const midAngle = startAngle + sweep / 2;
-      const lineStart = polarToCartesian(donutMetrics.center, donutMetrics.center, donutMetrics.outerRadius + 1, midAngle);
-      const lineTurn = polarToCartesian(donutMetrics.center, donutMetrics.center, donutMetrics.outerRadius + 14, midAngle);
+      const lineStart = polarToCartesian(donutMetrics.centerX, donutMetrics.centerY, donutMetrics.outerRadius + 1, midAngle);
+      const lineTurn = polarToCartesian(donutMetrics.centerX, donutMetrics.centerY, donutMetrics.outerRadius + 14, midAngle);
       const isRight = Math.cos(((midAngle - 90) * Math.PI) / 180) >= 0;
 
       startAngle = endAngle;
@@ -206,8 +212,8 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
     const rightItems = raw.filter((r) => r.isRight);
     const leftItems = raw.filter((r) => !r.isRight);
     const minY = 20;
-    const maxY = donutMetrics.size - 20;
-    const minGap = 18;
+    const maxY = donutMetrics.height - 20;
+    const minGap = 16;
 
     const rightAdjustedY = distributeLabelY(
       rightItems.map((r) => r.lineTurn.y),
@@ -222,10 +228,10 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
       maxY,
     );
 
-    const labelInset = Math.max(62, donutMetrics.size * 0.23);
-    const rightEndX = donutMetrics.size - labelInset;
+    const labelInset = Math.max(62, donutMetrics.width * 0.23);
+    const rightEndX = donutMetrics.width - labelInset;
     const leftEndX = labelInset;
-    const rightTextX = donutMetrics.size - 6;
+    const rightTextX = donutMetrics.width - 6;
     const leftTextX = 6;
 
     const rightMap = new Map<string, number>();

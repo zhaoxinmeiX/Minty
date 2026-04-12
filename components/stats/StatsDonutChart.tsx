@@ -6,8 +6,10 @@ import { Typography } from '@/constants/Typography';
 import { SegmentGeometry } from '@/src/hooks/useStatsScreen';
 
 type Props = {
-  size: number;
-  center: number;
+  width: number;
+  height: number;
+  centerX: number;
+  centerY: number;
   outerRadius: number;
   innerRadius: number;
   backgroundColor: string;
@@ -22,8 +24,10 @@ type Props = {
 };
 
 export function StatsDonutChart({
-  size,
-  center,
+  width,
+  height,
+  centerX,
+  centerY,
   outerRadius,
   innerRadius,
   backgroundColor,
@@ -43,7 +47,7 @@ export function StatsDonutChart({
 
   if (segments.length === 0) {
     return (
-      <View style={styles.emptyChart}>
+      <View style={[styles.emptyChart, { height }]}>
         <Text style={[styles.emptyText, { color: emptyTextColor }]}>{emptyText}</Text>
       </View>
     );
@@ -51,11 +55,11 @@ export function StatsDonutChart({
 
   return (
     <View style={styles.chartBox}>
-      <View style={[styles.pieWrap, { width: size, height: size }]}>
-        <Svg width={size} height={size}>
+      <View style={[styles.pieWrap, { width, height }]}>
+        <Svg width={width} height={height}>
           <Circle
-            cx={center}
-            cy={center}
+            cx={centerX}
+            cy={centerY}
             r={(outerRadius + innerRadius) / 2}
             fill="none"
             stroke={borderColor}
@@ -65,8 +69,8 @@ export function StatsDonutChart({
 
           {segments.length === 1 && (
             <Circle
-              cx={center}
-              cy={center}
+              cx={centerX}
+              cy={centerY}
               r={(outerRadius + innerRadius) / 2}
               fill="none"
               stroke={segments[0].color}
@@ -76,7 +80,7 @@ export function StatsDonutChart({
           )}
 
           {segments.map((segment) => (
-            <React.Fragment key={segment.name}>
+            <React.Fragment key={segment.categoryId}>
               {segments.length > 1 && <Path d={segment.path} fill={segment.color} onPress={() => onSegmentPress(segment.categoryId)} />}
               <Line x1={segment.lineStart.x} y1={segment.lineStart.y} x2={segment.lineTurn.x} y2={segment.lineTurn.y} stroke={segment.color} strokeWidth={2} />
               <Line x1={segment.lineTurn.x} y1={segment.lineTurn.y} x2={segment.lineEnd.x} y2={segment.lineEnd.y} stroke={segment.color} strokeWidth={2} />
@@ -86,8 +90,8 @@ export function StatsDonutChart({
             </React.Fragment>
           ))}
 
-          <Circle cx={center} cy={center} r={innerRadius - 4} fill={backgroundColor} />
-          <Circle cx={center} cy={center} r={innerRadius - 6} fill="none" stroke={borderColor} strokeWidth={1} />
+          <Circle cx={centerX} cy={centerY} r={innerRadius - 4} fill={backgroundColor} />
+          <Circle cx={centerX} cy={centerY} r={innerRadius - 6} fill="none" stroke={borderColor} strokeWidth={1} />
         </Svg>
         <View style={styles.totalCenter}>
           <Text style={[styles.totalLabel, { color: labelColor }]}>合计</Text>
@@ -110,8 +114,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  totalLabel: { fontSize: Typography.size.body, fontWeight: '600' },
-  totalValue: { fontSize: Typography.size.titleLg, fontWeight: '800', lineHeight: 38 },
+  totalLabel: { fontSize: Typography.size.footnote, fontWeight: '600' },
+  totalValue: { fontSize: Typography.size.label, fontWeight: '800', marginTop: 4 },
   emptyChart: { height: 200, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: Typography.size.body },
 });

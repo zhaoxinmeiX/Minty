@@ -30,10 +30,10 @@ const getDateBounds = (startDate?: string, endDate?: string) => {
   const start = startDate ? `${startDate} 00:00:00` : undefined;
   const end = endDate
     ? (() => {
-        const nextDay = new Date(`${endDate}T00:00:00`);
-        nextDay.setDate(nextDay.getDate() + 1);
-        return `${formatDateOnly(nextDay)} 00:00:00`;
-      })()
+      const nextDay = new Date(`${endDate}T00:00:00`);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return `${formatDateOnly(nextDay)} 00:00:00`;
+    })()
     : undefined;
 
   return { start, end };
@@ -415,7 +415,7 @@ export const getCategoryStats = (
     params.push(end);
   }
 
-  query += ` GROUP BY r.category_id, r.category, c.icon ORDER BY totalAmount DESC`;
+  query += ` GROUP BY r.category_id ORDER BY totalAmount DESC`;
 
   const rows = db.getAllSync<{ category: string; category_id: number; icon: string; totalAmount: number; count: number }>(query, ...params);
 
@@ -436,7 +436,7 @@ export const getCategoryStatsAsync = async (
 ): Promise<{ category: string; category_id: number; icon: string; totalAmount: number; count: number; percentage: number }[]> => {
   let query = `
     SELECT
-      r.category,
+      MAX(r.category) as category,
       r.category_id,
       IFNULL(c.icon, 'Question') as icon,
       SUM(r.amount) as totalAmount,
@@ -458,7 +458,7 @@ export const getCategoryStatsAsync = async (
     params.push(end);
   }
 
-  query += ` GROUP BY r.category_id, r.category, c.icon ORDER BY totalAmount DESC`;
+  query += ` GROUP BY r.category_id ORDER BY totalAmount DESC`;
 
   const rows = await db.getAllAsync<{ category: string; category_id: number; icon: string; totalAmount: number; count: number }>(query, ...params);
   const totalSum = rows.reduce((acc, row) => acc + row.totalAmount, 0);
