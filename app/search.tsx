@@ -6,8 +6,8 @@ import { ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, Text, Tex
 
 import { BillListRow, formatRecordAmount, getRecordDayKey } from '@/components/record/BillListRow';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
-import { Colors } from '@/constants/Colors';
 import { ScreenBackground } from '@/components/common/ScreenBackground';
+import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { deleteRecord, getRecordsForBillListAsync } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';

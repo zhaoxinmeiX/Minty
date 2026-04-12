@@ -14,6 +14,7 @@ import { DateTimePickerModal } from '@/components/add/DateTimePickerModal';
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { NumericPad } from '@/components/add/NumericPad';
 import { ScreenBackground } from '@/components/common/ScreenBackground';
+import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { addRecord, getRecordById, updateRecord } from '@/src/db/operations';
@@ -287,7 +288,7 @@ export default function AddScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top + 8 }]}>
       <ScreenBackground />
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />

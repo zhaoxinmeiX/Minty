@@ -51,9 +51,8 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
         <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
-          
+
           <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: theme.homeMuted }]}>账户</Text>
             <View style={[styles.sectionCard, { backgroundColor: theme.homeSurface }]}>
               <Pressable style={styles.listItem} onPress={handleEditNickname}>
                 <View style={[styles.profileAvatar, { backgroundColor: 'rgba(110, 125, 66, 0.08)', marginRight: 12 }]}>

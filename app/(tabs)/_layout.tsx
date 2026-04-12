@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { BarChart3, Calendar, Home, Settings } from 'lucide-react-native';
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { ScreenBackground } from '@/components/common/ScreenBackground';
 
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -25,6 +26,7 @@ export default function TabLayout() {
 
   return (
     <View style={styles.container}>
+      <ScreenBackground />
       <Tabs
         detachInactiveScreens={false}
         screenOptions={{
