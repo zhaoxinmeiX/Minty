@@ -11,8 +11,8 @@ import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { useLedgers } from '@/src/hooks/useLedgers';
-import { CategoryStat, TimeRange, useStatsScreen } from '@/src/hooks/useStatsScreen';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
+import { CategoryStat, TimeRange, useStatsScreen } from '@/src/hooks/useStatsScreen';
 import { useStore } from '@/src/store';
 
 const RANGE_OPTIONS: { value: TimeRange; label: string }[] = [

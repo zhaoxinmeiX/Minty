@@ -5,12 +5,12 @@ import * as Sharing from 'expo-sharing';
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Alert } from 'react-native';
 import * as XLSX from 'xlsx';
-import { addRecord, ensureLedgerSync, getCategoryByName, getRecordsByLedger } from '../db/operations';
+import { addRecord, ensureLedgerSync, getCategoryByName, getRecordsByLedger, getRecordsByLedgerInRangeAsync } from '../db/operations';
 
 // Export Ledger to Excel
-export const exportLedgerToExcel = async (db: SQLiteDatabase, ledgerId: number, ledgerName: string) => {
+export const exportLedgerToExcel = async (db: SQLiteDatabase, ledgerId: number, ledgerName: string, startDate?: string, endDate?: string) => {
   try {
-    const records = getRecordsByLedger(db, ledgerId);
+    const records = await getRecordsByLedgerInRangeAsync(db, ledgerId, startDate, endDate);
     if (records.length === 0) {
       Alert.alert('Empty Ledger', 'There are no records to export.');
       return;

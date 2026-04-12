@@ -156,6 +156,8 @@ function RootLayoutNav() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="data-management" options={{ headerShown: false }} />
+          <Stack.Screen name="ledgers" options={{ headerShown: false }} />
         </Stack>
       </SQLiteProvider>
     </SafeAreaProvider>

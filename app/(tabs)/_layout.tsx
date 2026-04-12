@@ -11,6 +11,18 @@ export default function TabLayout() {
   const themeColors = Colors.light;
   const isHomeLaunchOverlayVisible = useStore((state) => state.isHomeLaunchOverlayVisible);
 
+  const TabIcon = ({ Icon, title, color, focused }: { Icon: any; title: string; color: string; focused: boolean }) => (
+    <View style={styles.iconContainer}>
+      {focused && (
+        <View style={[styles.activePill, { backgroundColor: 'rgba(110, 125, 66, 0.12)' }]} />
+      )}
+      <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+      <Text style={[styles.tabLabel, { color, fontWeight: focused ? '800' : '600' }]}>
+        {title}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Tabs
@@ -24,13 +36,14 @@ export default function TabLayout() {
           },
           tabBarActiveTintColor: themeColors.homeOlive,
           tabBarInactiveTintColor: themeColors.homeMuted,
+          tabBarShowLabel: false,
           tabBarStyle: {
             position: 'absolute',
             left: 0,
             right: 0,
             bottom: 0,
             height: 94,
-            paddingBottom: 18,
+            paddingBottom: 24,
             paddingTop: 12,
             backgroundColor: themeColors.homeSurface,
             borderTopWidth: 0,
@@ -43,11 +56,6 @@ export default function TabLayout() {
             shadowOpacity: 0.08,
             shadowRadius: 16,
             elevation: 8,
-          },
-          tabBarLabelStyle: {
-            marginTop: 4,
-            fontSize: Typography.size.footnote,
-            fontWeight: '700',
           },
           headerStyle: {
             backgroundColor: themeColors.card,
@@ -66,7 +74,7 @@ export default function TabLayout() {
           options={{
             headerShown: false,
             title: '首页',
-            tabBarIcon: ({ color }) => <Home size={26} color={color} />,
+            tabBarIcon: ({ color, focused }) => <TabIcon Icon={Home} title="首页" color={color} focused={focused} />,
           }}
         />
         <Tabs.Screen
@@ -74,7 +82,7 @@ export default function TabLayout() {
           options={{
             headerShown: false,
             title: '日历',
-            tabBarIcon: ({ color }) => <Calendar size={26} color={color} />,
+            tabBarIcon: ({ color, focused }) => <TabIcon Icon={Calendar} title="日历" color={color} focused={focused} />,
           }}
         />
         <Tabs.Screen
@@ -82,7 +90,7 @@ export default function TabLayout() {
           options={{
             headerShown: false,
             title: '统计',
-            tabBarIcon: ({ color }) => <BarChart3 size={26} color={color} />,
+            tabBarIcon: ({ color, focused }) => <TabIcon Icon={BarChart3} title="统计" color={color} focused={focused} />,
           }}
         />
         <Tabs.Screen
@@ -90,7 +98,7 @@ export default function TabLayout() {
           options={{
             headerShown: false,
             title: '设置',
-            tabBarIcon: ({ color }) => <Settings size={26} color={color} />,
+            tabBarIcon: ({ color, focused }) => <TabIcon Icon={Settings} title="设置" color={color} focused={focused} />,
           }}
         />
       </Tabs>
@@ -110,6 +118,25 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  iconContainer: {
+    width: 64,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  activePill: {
+    position: 'absolute',
+    width: 64,
+    height: 56,
+    borderRadius: 20,
+    top: -2,
+  },
+  tabLabel: {
+    fontSize: Typography.size.caption,
+    marginTop: 2,
+    letterSpacing: -0.2,
   },
   launchOverlay: {
     ...StyleSheet.absoluteFillObject,
