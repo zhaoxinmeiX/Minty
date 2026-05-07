@@ -197,6 +197,7 @@ export default function StatsScreen() {
             borderBottomLeftRadius: 32,
             borderBottomRightRadius: 32,
             borderBottomWidth: 0,
+            paddingBottom: 32,
           },
         ]}
         onPress={() => openBillsByCategoryId(item.category_id)}
