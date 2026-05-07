@@ -3,7 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronLeft, Hexagon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, AppState, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { AmountInput } from '@/components/add/AmountInput';
 import { CategoryEditModal } from '@/components/add/CategoryEditModal';
@@ -12,12 +12,13 @@ import { CategoryManager } from '@/components/add/CategoryManager';
 import { CategoryPopover } from '@/components/add/CategoryPopover';
 import { DateTimePickerModal } from '@/components/add/DateTimePickerModal';
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
+import { NoteSuggestionList } from '@/components/add/NoteSuggestionList';
 import { NumericPad } from '@/components/add/NumericPad';
 import { ScreenBackground } from '@/components/common/ScreenBackground';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { addRecord, getRecordById, updateRecord } from '@/src/db/operations';
+import { addRecord, getRecordById, getRecordNoteSuggestionsAsync, RecordNoteSuggestion, updateRecord } from '@/src/db/operations';
 import { Category } from '@/src/db/schema';
 import { useCategories } from '@/src/hooks/useCategories';
 import { useCategoryPopover } from '@/src/hooks/useCategoryPopover';
@@ -34,6 +35,12 @@ const TAB_ROUTES = {
   settings: '/settings',
 } as const;
 
+type CategorySelectionTarget = {
+  type: 'expense' | 'income';
+  categoryId: number;
+  subCategoryId: number | null;
+};
+
 export default function AddScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
@@ -46,6 +53,8 @@ export default function AddScreen() {
   const setSelectedDateContext = useStore((state) => state.setSelectedDateContext);
   const lastTab = useStore((state) => state.lastTab);
   const bumpDataVersion = useStore((state) => state.bumpDataVersion);
+  const lastRecordCategorySelections = useStore((state) => state.lastRecordCategorySelections);
+  const setLastRecordCategorySelection = useStore((state) => state.setLastRecordCategorySelection);
   const { id, mode, date: paramDate } = useLocalSearchParams<{ id: string; mode: string; date?: string }>();
   const isEdit = mode === 'edit';
   const isCopy = mode === 'copy';
@@ -54,9 +63,13 @@ export default function AddScreen() {
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [noteSuggestions, setNoteSuggestions] = useState<RecordNoteSuggestion[]>([]);
+  const [isNoteSuggestionSuppressed, setIsNoteSuggestionSuppressed] = useState(false);
+  const [hasNoteInputChanged, setHasNoteInputChanged] = useState(false);
   const [date, setDate] = useState(new Date());
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<Category | null>(null);
+  const [pendingCategorySelection, setPendingCategorySelection] = useState<CategorySelectionTarget | null>(null);
   const [modalType, setModalType] = useState<ModalType>('none');
   const [editingCategory, setEditingCategory] = useState<EditingCategory | null>(null);
   const [tempDate, setTempDate] = useState(new Date());
@@ -64,12 +77,15 @@ export default function AddScreen() {
   const [isNoteInputFocused, setIsNoteInputFocused] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const ledgerButtonRef = React.useRef<View>(null);
+  const defaultCategoryKeyRef = React.useRef('');
+  const noteSuggestionRequestIdRef = React.useRef(0);
 
   const accentColor = type === 'expense' ? theme.homeAccent : theme.income;
 
   useFocusEffect(
     useCallback(() => {
       if (!isEdit && !isCopy) {
+        defaultCategoryKeyRef.current = '';
         setAmount('');
         setNote('');
         setSelectedCategory(null);
@@ -102,6 +118,68 @@ export default function AddScreen() {
   }, [ledgers, activeLedger, setActiveLedgerId]);
 
   React.useEffect(() => {
+    if (isEdit || isCopy || categories.length === 0 || categories[0]?.type !== type) {
+      return;
+    }
+
+    const defaultCategoryKey = `${activeLedgerId}-${type}`;
+    const selection = lastRecordCategorySelections[defaultCategoryKey];
+    const defaultCategoryStateKey = selection
+      ? `${defaultCategoryKey}-${selection.categoryId}-${selection.subCategoryId ?? 'none'}`
+      : `${defaultCategoryKey}-none`;
+
+    if (defaultCategoryKeyRef.current === defaultCategoryStateKey) {
+      return;
+    }
+
+    defaultCategoryKeyRef.current = defaultCategoryStateKey;
+
+    if (selection) {
+      setPendingCategorySelection({
+        type,
+        categoryId: selection.categoryId,
+        subCategoryId: selection.subCategoryId,
+      });
+      return;
+    }
+
+    setSelectedCategory(null);
+    setSelectedSubCategory(null);
+  }, [activeLedgerId, categories.length, isCopy, isEdit, lastRecordCategorySelections, type]);
+
+  React.useEffect(() => {
+    if (!pendingCategorySelection) {
+      return;
+    }
+
+    if (pendingCategorySelection.type !== type) {
+      setType(pendingCategorySelection.type);
+      return;
+    }
+
+    if (categories.length === 0 || categories[0]?.type !== pendingCategorySelection.type) {
+      return;
+    }
+
+    const foundCat = categories.find((category) => category.id === pendingCategorySelection.categoryId);
+
+    if (!foundCat) {
+      setSelectedCategory(null);
+      setSelectedSubCategory(null);
+      setPendingCategorySelection(null);
+      return;
+    }
+
+    setSelectedCategory(foundCat);
+    const subs = getSubs(foundCat.id);
+    const foundSub = pendingCategorySelection.subCategoryId
+      ? subs.find((sub) => sub.id === pendingCategorySelection.subCategoryId) ?? null
+      : null;
+    setSelectedSubCategory(foundSub);
+    setPendingCategorySelection(null);
+  }, [categories, getSubs, pendingCategorySelection, type]);
+
+  React.useEffect(() => {
     if (id) {
       const record = getRecordById(db, parseInt(id));
       if (record) {
@@ -112,6 +190,26 @@ export default function AddScreen() {
       }
     }
   }, [id, db]);
+
+  React.useEffect(() => {
+    const keyword = note.trim();
+
+    if (!isNoteInputFocused || !hasNoteInputChanged || isNoteSuggestionSuppressed || keyword.length === 0) {
+      noteSuggestionRequestIdRef.current += 1;
+      setNoteSuggestions([]);
+      return;
+    }
+
+    const requestId = ++noteSuggestionRequestIdRef.current;
+
+    void getRecordNoteSuggestionsAsync(db, activeLedgerId, type, keyword).then((suggestions) => {
+      if (requestId !== noteSuggestionRequestIdRef.current) {
+        return;
+      }
+
+      setNoteSuggestions(suggestions);
+    });
+  }, [activeLedgerId, db, hasNoteInputChanged, isNoteInputFocused, isNoteSuggestionSuppressed, note, type]);
 
   React.useEffect(() => {
     if (id && categories.length > 0) {
@@ -145,7 +243,27 @@ export default function AddScreen() {
     };
   }, []);
 
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active' || !isNoteInputFocused) {
+        return;
+      }
+
+      Keyboard.dismiss();
+      setIsNoteInputFocused(false);
+      setKeyboardHeight(0);
+      setNoteSuggestions([]);
+      setHasNoteInputChanged(false);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isNoteInputFocused]);
+
   const handleSelectMainCategory = (category: Category) => {
+    setPendingCategorySelection(null);
+
     if (selectedCategory?.id === category.id) {
       const subs = getSubs(category.id);
       if (subs.length > 0) popover.open(category, subs);
@@ -155,6 +273,25 @@ export default function AddScreen() {
       const subs = getSubs(category.id);
       if (subs.length > 0) popover.open(category, subs);
     }
+  };
+
+  const handleNoteChange = (text: string) => {
+    setNote(text);
+    setHasNoteInputChanged(true);
+    setIsNoteSuggestionSuppressed(false);
+  };
+
+  const handleSelectNoteSuggestion = (suggestion: RecordNoteSuggestion) => {
+    setNote(suggestion.note?.trim() || '');
+    setNoteSuggestions([]);
+    setIsNoteSuggestionSuppressed(true);
+    setHasNoteInputChanged(false);
+
+    setPendingCategorySelection({
+      type: suggestion.type,
+      categoryId: suggestion.category_id,
+      subCategoryId: suggestion.sub_category_id,
+    });
   };
 
   const formatLocalDatabaseDate = (targetDate: Date) => {
@@ -212,14 +349,21 @@ export default function AddScreen() {
       addRecord(db, recordData);
     }
 
+    setLastRecordCategorySelection(activeLedgerId, type, {
+      categoryId: selectedCategory.id,
+      subCategoryId: selectedSubCategory ? selectedSubCategory.id : null,
+    });
     bumpDataVersion();
 
     setAmount('');
     setNote('');
-    setSelectedCategory(null);
-    setSelectedSubCategory(null);
+    setNoteSuggestions([]);
+    setIsNoteSuggestionSuppressed(false);
+    setHasNoteInputChanged(false);
 
     if (!stayOnPage) {
+      setSelectedCategory(null);
+      setSelectedSubCategory(null);
       closeAddScreen();
     }
   };
@@ -264,6 +408,8 @@ export default function AddScreen() {
   const categoryRowCount = Math.ceil(categories.length / CATEGORY_GRID_COLUMN_COUNT);
   const shouldScrollCategories = isCompactLayout ? categoryRowCount > 3 : categoryRowCount > 4;
   const fallbackRoute = TAB_ROUTES[lastTab as keyof typeof TAB_ROUTES] ?? TAB_ROUTES.index;
+  const showNoteSuggestions = isNoteInputFocused && noteSuggestions.length > 0;
+  const noteSuggestionBottomOffset = (keyboardHeight > 0 ? keyboardHeight : insets.bottom) + 60;
 
   const closeAddScreen = () => {
     if (router.canGoBack()) {
@@ -371,7 +517,7 @@ export default function AddScreen() {
               amount={amount}
               result={result}
               note={note}
-              onNoteChange={setNote}
+              onNoteChange={handleNoteChange}
               onAmountChange={setAmount}
               onDatePress={() => {
                 setTempDate(new Date(date));
@@ -383,11 +529,21 @@ export default function AddScreen() {
               accentColor={accentColor}
               ledgerTriggerRef={ledgerButtonRef}
               compact={isCompactLayout}
-              onNoteFocus={() => setIsNoteInputFocused(true)}
-              onNoteBlur={() => setIsNoteInputFocused(false)}
+              onNoteFocus={() => {
+                setIsNoteInputFocused(true);
+                setIsNoteSuggestionSuppressed(false);
+                setHasNoteInputChanged(false);
+              }}
+              onNoteBlur={() => {
+                setTimeout(() => {
+                  setIsNoteInputFocused(false);
+                  setHasNoteInputChanged(false);
+                }, 120);
+              }}
               onAmountDisplayPress={() => {
                 Keyboard.dismiss();
                 setIsNoteInputFocused(false);
+                setHasNoteInputChanged(false);
               }}
             />
             {!isNoteInputFocused && (
@@ -404,6 +560,18 @@ export default function AddScreen() {
           </View>
         </View>
       </View>
+
+      {showNoteSuggestions && (
+        <View style={[styles.noteSuggestionOverlay, { bottom: noteSuggestionBottomOffset }]}>
+          <NoteSuggestionList
+            suggestions={noteSuggestions}
+            keyword={note.trim()}
+            accentColor={accentColor}
+            compact={isCompactLayout}
+            onSelect={handleSelectNoteSuggestion}
+          />
+        </View>
+      )}
 
       <CategoryPopover
         visible={popover.isVisible}
@@ -566,5 +734,12 @@ const styles = StyleSheet.create({
   },
   footerCompact: {
     paddingTop: 4,
+  },
+  noteSuggestionOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 30,
+    elevation: 30,
   },
 });

@@ -170,6 +170,11 @@ export type BillListCategoryOption = {
   icon: string;
 };
 
+export type RecordNoteSuggestion = Pick<
+  RecordItem,
+  'id' | 'amount' | 'type' | 'category_id' | 'sub_category_id' | 'category' | 'sub_category' | 'note' | 'created_at' | 'icon'
+>;
+
 type RecordMutationBase = Omit<RecordItem, 'id' | 'created_at' | 'icon'>;
 type RecordInsertData = RecordMutationBase & { created_at?: string };
 type RecordUpdateData = RecordMutationBase & { created_at: string };
@@ -346,6 +351,36 @@ export const getRecordById = (db: SQLiteDatabase, id: number): RecordItem | null
      ${RECORD_CATEGORY_JOINS}
      WHERE r.id = ?`,
     id,
+  );
+};
+
+export const getRecordNoteSuggestionsAsync = (
+  db: SQLiteDatabase,
+  ledgerId: number,
+  type: 'expense' | 'income',
+  keyword: string,
+  limit: number = 10,
+): Promise<RecordNoteSuggestion[]> => {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+
+  if (!normalizedKeyword) {
+    return Promise.resolve([]);
+  }
+
+  return db.getAllAsync<RecordNoteSuggestion>(
+    `SELECT r.*, ${RECORD_ICON_SELECT}
+     FROM records r
+     ${RECORD_CATEGORY_JOINS}
+     WHERE r.ledger_id = ?
+       AND r.type = ?
+       AND TRIM(IFNULL(r.note, '')) <> ''
+       AND LOWER(r.note) LIKE ?
+     ORDER BY r.created_at DESC, r.id DESC
+     LIMIT ?`,
+    ledgerId,
+    type,
+    `%${normalizedKeyword}%`,
+    limit,
   );
 };
 
