@@ -3,7 +3,7 @@ import { Typography } from '@/constants/Typography';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 interface MonthPickerModalProps {
   visible: boolean;
@@ -23,24 +23,31 @@ export const MonthPickerModal: React.FC<MonthPickerModalProps> = ({ visible, cur
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
 
+  const [renderVisible, setRenderVisible] = useState(visible);
+
   useEffect(() => {
     if (visible) {
+      setRenderVisible(true);
       setYear(parseInt(currentMonth.split('-')[0]));
       translateY.value = withTiming(0, { duration: 300 });
       opacity.value = withTiming(1, { duration: 300 });
     } else {
       translateY.value = withTiming(SCREEN_HEIGHT, { duration: 300 });
-      opacity.value = withTiming(0, { duration: 300 });
+      opacity.value = withTiming(0, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderVisible)(false);
+        }
+      });
     }
   }, [visible, currentMonth]);
 
   const animatedBackdropStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const animatedContentStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
-  if (!visible && opacity.value === 0) return null;
+  if (!renderVisible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="none">
+    <Modal visible={renderVisible} transparent animationType="none">
       <View style={styles.overlay}>
         <Animated.View style={[styles.backdrop, animatedBackdropStyle]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
