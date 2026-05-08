@@ -25,27 +25,27 @@ export function useCategories(type: 'expense' | 'income') {
     fetchCategories();
   }, [fetchCategories]);
 
-  const add = (name: string, icon: string, parentId: number | null = null) => {
+  const add = useCallback((name: string, icon: string, parentId: number | null = null) => {
     addCategory(db, name, icon, type, parentId);
     bumpDataVersion();
     fetchCategories();
-  };
+  }, [db, type, bumpDataVersion, fetchCategories]);
 
-  const update = (id: number, name: string, icon: string) => {
+  const update = useCallback((id: number, name: string, icon: string) => {
     updateCategory(db, id, name, icon);
     bumpDataVersion();
     fetchCategories();
-  };
+  }, [db, bumpDataVersion, fetchCategories]);
 
-  const remove = (id: number) => {
+  const remove = useCallback((id: number) => {
     deleteCategory(db, id);
     bumpDataVersion();
     fetchCategories();
-  };
+  }, [db, bumpDataVersion, fetchCategories]);
 
-  const getSubs = (parentId: number) => {
+  const getSubs = useCallback((parentId: number) => {
     return getSubCategories(db, parentId);
-  };
+  }, [db]);
 
   return {
     categories,

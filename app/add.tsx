@@ -79,6 +79,7 @@ export default function AddScreen() {
   const ledgerButtonRef = React.useRef<View>(null);
   const defaultCategoryKeyRef = React.useRef('');
   const noteSuggestionRequestIdRef = React.useRef(0);
+  const hasInitializedCategoryRef = React.useRef<string | null>(null);
 
   const accentColor = type === 'expense' ? theme.homeAccent : theme.income;
 
@@ -101,6 +102,8 @@ export default function AddScreen() {
         } else {
           setDate(new Date());
         }
+        
+        hasInitializedCategoryRef.current = null;
       }
     }, [isEdit, isCopy, paramDate, selectedDateContext]),
   );
@@ -212,7 +215,7 @@ export default function AddScreen() {
   }, [activeLedgerId, db, hasNoteInputChanged, isNoteInputFocused, isNoteSuggestionSuppressed, note, type]);
 
   React.useEffect(() => {
-    if (id && categories.length > 0) {
+    if (id && categories.length > 0 && hasInitializedCategoryRef.current !== id) {
       const record = getRecordById(db, parseInt(id));
       if (record && record.type === type) {
         const foundCat = categories.find((category) => category.id === record.category_id);
@@ -223,6 +226,7 @@ export default function AddScreen() {
           if (foundSub) setSelectedSubCategory(foundSub);
         }
       }
+      hasInitializedCategoryRef.current = id;
     }
   }, [id, categories, type, db, getSubs]);
 
