@@ -4,6 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { StatsDonutChart } from '@/components/stats/StatsDonutChart';
@@ -274,9 +275,10 @@ export default function StatsScreen() {
         </View>
       </View>
 
-      <FlatList
+      <Animated.FlatList
+        itemLayoutAnimation={LinearTransition}
         data={statsState.stats}
-        keyExtractor={(item) => item.category_id.toString()}
+        keyExtractor={(item: CategoryStat) => item.category_id.toString()}
         renderItem={renderRankingItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

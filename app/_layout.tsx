@@ -7,8 +7,12 @@ import { SQLiteDatabase, SQLiteProvider } from 'expo-sqlite';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, UIManager, Platform } from 'react-native';
 import { Colors } from '@/constants/Colors';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export { ErrorBoundary } from 'expo-router';
 

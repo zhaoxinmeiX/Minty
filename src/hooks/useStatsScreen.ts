@@ -1,6 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
-import { Dimensions } from 'react-native';
+import { Dimensions, LayoutAnimation } from 'react-native';
 
 import { getCategoryStatsAsync } from '@/src/db/operations';
 import { formatDateToISO } from '@/src/utils/date';
@@ -154,6 +154,7 @@ export function useStatsScreen(db: SQLiteDatabase, ledgerId: number) {
     startTransition(() => {
       // Data is already sorted by amount from getCategoryStatsAsync usually, 
       // but we can ensure it here if needed.
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setStats(data);
     });
   }, [currentDate, db, ledgerId, range, type]);
