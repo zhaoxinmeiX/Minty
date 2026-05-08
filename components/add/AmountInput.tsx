@@ -20,6 +20,7 @@ interface AmountInputProps {
   onNoteFocus?: () => void;
   onNoteBlur?: () => void;
   onAmountDisplayPress?: () => void;
+  onSubmitEditing?: () => void;
 }
 
 export const AmountInput: React.FC<AmountInputProps> = ({
@@ -37,6 +38,7 @@ export const AmountInput: React.FC<AmountInputProps> = ({
   onNoteFocus,
   onNoteBlur,
   onAmountDisplayPress,
+  onSubmitEditing,
 }) => {
   const theme = Colors.light;
   const noteInputRef = React.useRef<TextInput>(null);
@@ -70,6 +72,7 @@ export const AmountInput: React.FC<AmountInputProps> = ({
             onChangeText={onNoteChange}
             onFocus={onNoteFocus}
             onBlur={onNoteBlur}
+            onSubmitEditing={onSubmitEditing}
             returnKeyType="done"
             blurOnSubmit
           />

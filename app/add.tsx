@@ -549,6 +549,7 @@ export default function AddScreen() {
                 setIsNoteInputFocused(false);
                 setHasNoteInputChanged(false);
               }}
+              onSubmitEditing={() => handleSaveRecord(false)}
             />
             {!isNoteInputFocused && (
               <NumericPad

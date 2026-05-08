@@ -4,7 +4,7 @@ import { Calculator, Delete, Reply } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-const BUTTON_HEIGHT = 48;
+const BUTTON_HEIGHT = 54;
 
 interface NumericPadProps {
   onPress: (val: string) => void;
@@ -21,7 +21,7 @@ export const NumericPad: React.FC<NumericPadProps> = ({ onPress, onClear, onDele
   const defaultButtonBg = theme.homeSurfaceStrong;
   const utilityButtonBg = theme.homeSection;
   const [mode, setMode] = useState<'normal' | 'calc'>('normal');
-  const buttonHeight = compact ? 44 : BUTTON_HEIGHT;
+  const buttonHeight = compact ? 48 : BUTTON_HEIGHT;
   const buttonGap = compact ? 8 : 6;
 
   const renderButton = (label: string | React.ReactNode, action: () => void, options: { flex?: number; bg?: string; color?: string; fontSize?: number; height?: number } = {}) => (
