@@ -12,11 +12,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(44,52,32,0.32)',
   },
   filterSheet: {
-    position: 'absolute',
     width: '100%',
-    left: 0,
-    right: 0,
-    bottom: 0,
     maxHeight: '92%',
     backgroundColor: '#FCFAF8',
     borderTopLeftRadius: 36,
@@ -28,7 +24,8 @@ export const styles = StyleSheet.create({
   },
   dragHandleContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
+    paddingVertical: 12,
   },
   dragHandle: {
     width: 40,
@@ -128,7 +125,7 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
   dateRangeTriggerActive: {
-    borderColor: '#EEF3D8',
+    borderColor: '#F98C58',
     borderWidth: 1,
   },
   typeWrap: {
@@ -144,7 +141,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   typeChipActive: {
-    backgroundColor: '#EEF3D8',
+    backgroundColor: '#F98C58',
   },
   typeChipText: {
     color: '#7F8671',
@@ -152,7 +149,7 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
   typeChipTextActive: {
-    color: '#6E7D42',
+    color: '#FFFFFF',
   },
   amountInputContainer: {
     flexDirection: 'row',
@@ -248,8 +245,8 @@ export const styles = StyleSheet.create({
     marginBottom: 10,
   },
   categoryItemActive: {
-    backgroundColor: '#EEF3D8',
-    borderColor: 'rgba(110, 125, 66, 0.18)',
+    backgroundColor: '#F98C58',
+    borderColor: '#F98C58',
   },
   categoryItemText: {
     fontSize: Typography.size.body,
@@ -258,7 +255,7 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
   categoryItemTextActive: {
-    color: '#2C3420',
+    color: '#FFFFFF',
   },
   categoryCheck: {
     width: 24,
@@ -271,7 +268,7 @@ export const styles = StyleSheet.create({
     borderColor: 'rgba(110, 125, 66, 0.1)',
   },
   categoryCheckActive: {
-    backgroundColor: '#F98C58',
-    borderColor: '#F98C58',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
   },
 });

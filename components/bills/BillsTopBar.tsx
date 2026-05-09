@@ -1,6 +1,6 @@
 import { ArrowLeft, ChevronDown, CircleX, Search, SlidersHorizontal, X } from 'lucide-react-native';
 import React from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -20,6 +20,7 @@ type Props = {
   onOpenLedgerPicker: () => void;
   onToggleFilters: () => void;
   hasFilters: boolean;
+  tags: { key: string; label: string; onRemove: () => void }[];
 };
 
 export function BillsTopBar({
@@ -37,6 +38,7 @@ export function BillsTopBar({
   onOpenLedgerPicker,
   onToggleFilters,
   hasFilters,
+  tags,
 }: Props) {
   const theme = Colors.light;
   const handleOpenLedgerPicker = () => {
@@ -98,7 +100,12 @@ export function BillsTopBar({
       </View>
 
       <View style={styles.toolbar}>
-        <View style={styles.toolbarLeft}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.toolbarLeftScroll}
+          contentContainerStyle={styles.toolbarLeftContent}
+        >
           <View ref={ledgerTriggerRef} collapsable={false}>
             <Pressable style={[styles.toolbarChip, { backgroundColor: lightGray }]} onPress={handleOpenLedgerPicker}>
               <Text style={[styles.toolbarChipText, { color: theme.text }]} numberOfLines={1}>
@@ -107,7 +114,15 @@ export function BillsTopBar({
               <ChevronDown size={15} color={theme.homeOlive} />
             </Pressable>
           </View>
-        </View>
+
+          {tags.map((tag) => (
+            <Pressable key={tag.key} style={[styles.toolbarChip, { backgroundColor: lightGray }]} onPress={handleToggleFilters}>
+              <Text style={[styles.toolbarChipText, { color: theme.homeAccent, fontWeight: '600' }]} numberOfLines={1}>
+                {tag.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         <Pressable
           style={[
@@ -198,11 +213,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 10,
   },
-  toolbarLeft: {
+  toolbarLeftScroll: {
+    flex: 1,
+    marginRight: 10,
+  },
+  toolbarLeftContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    flex: 1,
+    paddingRight: 8,
   },
   toolbarChip: {
     minHeight: 32,

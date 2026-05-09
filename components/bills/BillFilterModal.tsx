@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 import { BillListType } from '@/src/db/operations';
@@ -73,12 +73,12 @@ export function BillFilterModal({
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <View style={styles.filterOverlay}>
-          <Animated.View style={[styles.filterBackdrop, animatedBackdropStyle]}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-          </Animated.View>
+      <Animated.View style={[styles.filterBackdrop, animatedBackdropStyle, StyleSheet.absoluteFill]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
 
-          <Animated.View style={[styles.filterSheet, animatedFilterSheetStyle]}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.filterOverlay} pointerEvents="box-none">
+        <Animated.View style={[styles.filterSheet, animatedFilterSheetStyle]}>
             <BillFilterForm
               startDateInput={startDateInput}
               endDateInput={endDateInput}
@@ -125,7 +125,7 @@ export function BillFilterModal({
               </Animated.View>
             </>
           )}
-        </View>
-      </Modal>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }

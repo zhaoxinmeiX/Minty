@@ -27,7 +27,7 @@ export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryIds,
 
         <Text style={[styles.filterMainTitle, { fontSize: 18 }]}>选择分类</Text>
 
-        <Pressable style={styles.headerIconBtnPlain} onPress={onClose} hitSlop={8}>
+        <Pressable style={styles.headerIconBtnPlain} onPress={onCloseCategoryPicker} hitSlop={8}>
           <CircleX size={22} color={theme.homeMuted} />
         </Pressable>
       </View>
@@ -49,7 +49,7 @@ export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryIds,
             <Text style={[styles.categoryItemText, selectedCategoryIds.length === 0 && styles.categoryItemTextActive]}>不限制</Text>
             {selectedCategoryIds.length === 0 ? (
               <View style={[styles.categoryCheck, styles.categoryCheckActive]}>
-                <Check size={14} color="#FFFFFF" />
+                <Check size={14} color="#F98C58" />
               </View>
             ) : null}
           </Pressable>
@@ -66,7 +66,7 @@ export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryIds,
               <Text style={[styles.categoryItemText, selected && styles.categoryItemTextActive]}>{item.category}</Text>
               {selected ? (
                 <View style={[styles.categoryCheck, styles.categoryCheckActive]}>
-                  <Check size={14} color="#FFFFFF" />
+                  <Check size={14} color="#F98C58" />
                 </View>
               ) : null}
             </Pressable>

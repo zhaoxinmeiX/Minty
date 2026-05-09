@@ -162,6 +162,8 @@ export function useBillFilters({ initialType, initialCategoryIds, initialStartDa
     setMinAmountInput,
     setMaxAmountInput,
     setCategoryDraftIds,
+    setFilters,
+    syncDraftsFromFilters,
     handleApplyFilters,
     handleResetFilters,
     handleToggleFilters,

@@ -105,9 +105,6 @@ export function BillFilterForm({
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} bounces={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.filterScrollContent}>
-      <View style={styles.dragHandleContainer}>
-        <View style={styles.dragHandle} />
-      </View>
 
       <View style={styles.filterHeaderCompact}>
         <Text style={styles.filterMainTitle}>筛选</Text>

@@ -114,6 +114,8 @@ export default function BillsScreen() {
     setMinAmountInput,
     setMaxAmountInput,
     setCategoryDraftIds,
+    setFilters,
+    syncDraftsFromFilters,
     handleApplyFilters,
     handleResetFilters,
     handleToggleFilters,
@@ -293,10 +295,47 @@ export default function BillsScreen() {
     [categoryDraftIds, categoryOptions]
   );
 
-  const appliedCategories = useMemo(
-    () => categoryOptions.filter((item) => filters.categoryIds?.includes(item.category_id)),
-    [categoryOptions, filters.categoryIds]
-  );
+  const tags = useMemo(() => {
+    const list: { key: string; label: string; onRemove: () => void }[] = [];
+    
+    const applyAndUpdate = (next: typeof filters) => {
+      setFilters(next);
+      syncDraftsFromFilters(next);
+    };
+
+    if (filters.startDate || filters.endDate) {
+      list.push({ key: 'date', label: `${filters.startDate || ''}至${filters.endDate || ''}`, onRemove: () => applyAndUpdate({ ...filters, startDate: undefined, endDate: undefined }) });
+    }
+
+    if (filters.type === 'expense') {
+      list.push({ key: 'type', label: '支出', onRemove: () => applyAndUpdate({ ...filters, type: 'all' }) });
+    } else if (filters.type === 'income') {
+      list.push({ key: 'type', label: '收入', onRemove: () => applyAndUpdate({ ...filters, type: 'all' }) });
+    }
+
+    if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
+      const minStr = filters.minAmount !== undefined ? `¥${filters.minAmount}` : '¥0';
+      const maxStr = filters.maxAmount !== undefined ? `¥${filters.maxAmount}` : '∞';
+      list.push({ key: 'amount', label: `${minStr} - ${maxStr}`, onRemove: () => applyAndUpdate({ ...filters, minAmount: undefined, maxAmount: undefined }) });
+    }
+
+    if (filters.categoryIds && filters.categoryIds.length > 0) {
+      categoryOptions
+        .filter((item) => filters.categoryIds?.includes(item.category_id))
+        .forEach((c) => {
+          list.push({
+            key: `cat_${c.category_id}`,
+            label: c.category,
+            onRemove: () => {
+              const newIds = filters.categoryIds?.filter((id) => id !== c.category_id);
+              applyAndUpdate({ ...filters, categoryIds: newIds?.length ? newIds : undefined });
+            },
+          });
+        });
+    }
+
+    return list;
+  }, [categoryOptions, filters, setFilters, syncDraftsFromFilters]);
 
   const openLedgerPicker = () => {
     if (!ledgerButtonRef.current) {
@@ -358,6 +397,7 @@ export default function BillsScreen() {
         onOpenSearch={() => setSearchOpen(true)}
         onOpenLedgerPicker={openLedgerPicker}
         onToggleFilters={handleToggleFilters}
+        tags={tags}
       />
 
       <View style={localStyles.listShell}>
@@ -526,12 +566,6 @@ export default function BillsScreen() {
         }}
         onClose={() => setIsLedgerModalVisible(false)}
       />
-
-      {appliedCategories.length > 0 && (
-        <View style={styles.appliedHint}>
-          <Text style={styles.appliedHintText}>已筛选分类：{appliedCategories.map(c => c.category).join('、')}</Text>
-        </View>
-      )}
     </View>
   );
 }
