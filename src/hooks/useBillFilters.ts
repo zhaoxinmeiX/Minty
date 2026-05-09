@@ -7,13 +7,13 @@ import { isValidDate, normalizeBillType, parseNumber } from '@/src/utils/billsFi
 
 type Params = {
   initialType?: string;
-  initialCategoryId?: number;
+  initialCategoryIds?: number[];
   initialStartDate?: string;
   initialEndDate?: string;
   screenHeight: number;
 };
 
-export function useBillFilters({ initialType, initialCategoryId, initialStartDate, initialEndDate, screenHeight }: Params) {
+export function useBillFilters({ initialType, initialCategoryIds, initialStartDate, initialEndDate, screenHeight }: Params) {
   const resolvedType = normalizeBillType(initialType);
 
   const [showFilters, setShowFilters] = useState(false);
@@ -26,13 +26,13 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
   const [typeDraft, setTypeDraft] = useState<BillListType>(resolvedType);
   const [minAmountInput, setMinAmountInput] = useState('');
   const [maxAmountInput, setMaxAmountInput] = useState('');
-  const [categoryDraftId, setCategoryDraftId] = useState<number | undefined>(initialCategoryId);
+  const [categoryDraftIds, setCategoryDraftIds] = useState<number[]>(initialCategoryIds || []);
 
   const [filters, setFilters] = useState<AppliedFilters>({
     startDate: initialStartDate,
     endDate: initialEndDate,
     type: resolvedType,
-    categoryId: initialCategoryId,
+    categoryIds: initialCategoryIds,
   });
 
   const filterTranslateY = useSharedValue(screenHeight);
@@ -53,7 +53,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     setTypeDraft(nextFilters.type ?? 'all');
     setMinAmountInput(nextFilters.minAmount !== undefined ? nextFilters.minAmount.toString() : '');
     setMaxAmountInput(nextFilters.maxAmount !== undefined ? nextFilters.maxAmount.toString() : '');
-    setCategoryDraftId(nextFilters.categoryId);
+    setCategoryDraftIds(nextFilters.categoryIds || []);
   };
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
       endDate: isValidDate(endDateInput) ? endDateInput : undefined,
       minAmount: parseNumber(minAmountInput),
       maxAmount: parseNumber(maxAmountInput),
-      categoryId: categoryDraftId,
+      categoryIds: categoryDraftIds.length > 0 ? categoryDraftIds : undefined,
     };
     setFilters(next);
     setShowFilters(false);
@@ -111,7 +111,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     setTypeDraft('all');
     setMinAmountInput('');
     setMaxAmountInput('');
-    setCategoryDraftId(undefined);
+    setCategoryDraftIds([]);
   };
 
   const handleToggleFilters = () => {
@@ -153,7 +153,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     typeDraft,
     minAmountInput,
     maxAmountInput,
-    categoryDraftId,
+    categoryDraftIds,
     animatedBackdropStyle,
     animatedFilterSheetStyle,
     setStartDateInput,
@@ -161,7 +161,7 @@ export function useBillFilters({ initialType, initialCategoryId, initialStartDat
     setTypeDraft,
     setMinAmountInput,
     setMaxAmountInput,
-    setCategoryDraftId,
+    setCategoryDraftIds,
     handleApplyFilters,
     handleResetFilters,
     handleToggleFilters,

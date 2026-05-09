@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 import { BillListType } from '@/src/db/operations';
 import { CategoryOption } from '@/src/types/bills';
@@ -19,7 +19,7 @@ type Props = {
   minAmountInput: string;
   maxAmountInput: string;
   typeDraft: BillListType;
-  selectedCategoryId?: number;
+  selectedCategoryIds: number[];
   selectedCategoryName?: string;
   categoryOptions: CategoryOption[];
   animatedBackdropStyle: object;
@@ -35,7 +35,7 @@ type Props = {
   onMinAmountChange: (value: string) => void;
   onMaxAmountChange: (value: string) => void;
   onTypeChange: (value: BillListType) => void;
-  onSelectCategory: (categoryId?: number) => void;
+  onToggleCategory: (categoryId?: number) => void;
   onReset: () => void;
   onApply: () => void;
 };
@@ -49,7 +49,7 @@ export function BillFilterModal({
   minAmountInput,
   maxAmountInput,
   typeDraft,
-  selectedCategoryId,
+  selectedCategoryIds,
   selectedCategoryName,
   categoryOptions,
   animatedBackdropStyle,
@@ -65,7 +65,7 @@ export function BillFilterModal({
   onMinAmountChange,
   onMaxAmountChange,
   onTypeChange,
-  onSelectCategory,
+  onToggleCategory,
   onReset,
   onApply,
 }: Props) {
@@ -74,29 +74,11 @@ export function BillFilterModal({
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.filterOverlay}>
-        <Animated.View style={[styles.filterBackdrop, animatedBackdropStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        </Animated.View>
+          <Animated.View style={[styles.filterBackdrop, animatedBackdropStyle]}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+          </Animated.View>
 
-        <Animated.View style={[styles.filterSheet, animatedFilterSheetStyle]}>
-          {showCategoryPicker ? (
-            <BillFilterCategoryPicker
-              categoryOptions={categoryOptions}
-              selectedCategoryId={selectedCategoryId}
-              onSelectCategory={onSelectCategory}
-              onCloseCategoryPicker={onCloseCategoryPicker}
-              onClose={onClose}
-            />
-          ) : showDateRangePicker ? (
-            <BillFilterDateRangePicker
-              startDateInput={startDateInput}
-              endDateInput={endDateInput}
-              onStartDateChange={onStartDateChange}
-              onEndDateChange={onEndDateChange}
-              onCloseDateRangePicker={onCloseDateRangePicker}
-              onClose={onClose}
-            />
-          ) : (
+          <Animated.View style={[styles.filterSheet, animatedFilterSheetStyle]}>
             <BillFilterForm
               startDateInput={startDateInput}
               endDateInput={endDateInput}
@@ -110,13 +92,40 @@ export function BillFilterModal({
               onTypeChange={onTypeChange}
               onOpenDateRangePicker={onOpenDateRangePicker}
               onOpenCategoryPicker={onOpenCategoryPicker}
+              onStartDateChange={onStartDateChange}
+              onEndDateChange={onEndDateChange}
               onClose={onClose}
               onReset={onReset}
               onApply={onApply}
             />
+          </Animated.View>
+
+          {showCategoryPicker && (
+            <>
+              <Animated.View
+                entering={FadeIn.duration(200)}
+                exiting={FadeOut.duration(200)}
+                style={StyleSheet.absoluteFill}
+              >
+                <Pressable style={styles.filterBackdrop} onPress={onCloseCategoryPicker} />
+              </Animated.View>
+
+              <Animated.View
+                entering={SlideInDown.duration(250)}
+                exiting={SlideOutDown.duration(200)}
+                style={[styles.filterSheet, { maxHeight: '70%', bottom: 0, position: 'absolute' }]}
+              >
+                <BillFilterCategoryPicker
+                  categoryOptions={categoryOptions}
+                  selectedCategoryIds={selectedCategoryIds}
+                  onToggleCategory={onToggleCategory}
+                  onCloseCategoryPicker={onCloseCategoryPicker}
+                  onClose={onClose}
+                />
+              </Animated.View>
+            </>
           )}
-        </Animated.View>
-      </View>
-    </Modal>
+        </View>
+      </Modal>
   );
 }

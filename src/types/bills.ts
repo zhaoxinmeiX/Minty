@@ -20,5 +20,5 @@ export type AppliedFilters = {
   type: BillListType;
   minAmount?: number;
   maxAmount?: number;
-  categoryId?: number;
+  categoryIds?: number[];
 };

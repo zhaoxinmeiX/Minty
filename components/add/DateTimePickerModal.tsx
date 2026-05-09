@@ -13,12 +13,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface DateTimePickerModalProps {
   visible: boolean;
   tempDate: Date;
+  minimumDate?: Date;
+  maximumDate?: Date;
+  hideTimePicker?: boolean;
   onDateChange: (date: Date) => void;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visible, tempDate, onDateChange, onConfirm, onCancel }) => {
+export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visible, tempDate, minimumDate, maximumDate, hideTimePicker, onDateChange, onConfirm, onCancel }) => {
   const theme = Colors.light;
   const accentColor = theme.homeAccent;
   const { width, height } = useWindowDimensions();
@@ -56,6 +59,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
       translateY.value = withTiming(0, { duration: 300 });
       opacity.value = withTiming(1, { duration: 300 });
       setCurrentMonth(getLocalDateString(tempDate).slice(0, 7));
+      setCalendarKey(Date.now());
     } else {
       translateY.value = withTiming(height, { duration: 300 });
       opacity.value = withTiming(0, { duration: 300 });
@@ -101,12 +105,17 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
     const dateStr = date.dateString;
     const isToday = dateStr === getLocalDateString(new Date());
     const isSelected = dateStr === getLocalDateString(tempDate);
-    const isDisabled = state === 'disabled';
+    
+    let isOutOfRange = false;
+    if (minimumDate && dateStr < getLocalDateString(minimumDate)) isOutOfRange = true;
+    if (maximumDate && dateStr > getLocalDateString(maximumDate)) isOutOfRange = true;
+
+    const isDisabled = state === 'disabled' || isOutOfRange;
 
     const lunarDay = getLunarLabel(date.year, date.month, date.day);
 
     return (
-      <Pressable onPress={() => handleDayPress(date)} style={[styles.dayContainer, isSelected && { backgroundColor: accentColor }]}>
+      <Pressable onPress={() => { if (!isDisabled) handleDayPress(date); }} style={[styles.dayContainer, isSelected && { backgroundColor: accentColor }]}>
         <Text style={[styles.dayNumber, { color: isSelected ? '#fff' : isDisabled ? theme.tabIconDefault : theme.text }]}>{date.day}</Text>
         <Text style={[styles.lunarText, { color: isSelected ? '#fff' : theme.tabIconDefault }]}>{lunarDay}</Text>
       </Pressable>
@@ -252,11 +261,17 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
                   horizontal={true}
                   pagingEnabled={true}
                   calendarWidth={width - 48}
-                  pastScrollRange={24}
-                  futureScrollRange={24}
+                  pastScrollRange={6}
+                  futureScrollRange={6}
+                  initialNumToRender={2}
+                  windowSize={3}
+                  maxToRenderPerBatch={2}
+                  removeClippedSubviews={true}
                   scrollEnabled={true}
                   showScrollIndicator={false}
                   staticHeader={true}
+                  minDate={minimumDate ? getLocalDateString(minimumDate) : undefined}
+                  maxDate={maximumDate ? getLocalDateString(maximumDate) : undefined}
                   calendarStyle={{ paddingLeft: 0, paddingRight: 0 }}
                   onMonthChange={(m) => setCurrentMonth(m.dateString.slice(0, 7))}
                   dayComponent={renderDay}
@@ -286,12 +301,16 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({ visibl
 
           {/* New Footer */}
           <View style={styles.modalFooter}>
-            <Pressable style={[styles.timeBtn, { backgroundColor: theme.background }]} onPress={() => setShowTimePicker(!showTimePicker)}>
-              <Text style={[styles.timeBtnText, { color: theme.tabIconDefault }]}>{!showTimePicker ? `时间 ${displayTime}` : '修改日期'}</Text>
-              <ChevronRightSmall size={14} color={theme.tabIconDefault} style={showTimePicker && { transform: [{ rotate: '180deg' }] }} />
-            </Pressable>
+            {!hideTimePicker ? (
+              <Pressable style={[styles.timeBtn, { backgroundColor: theme.background }]} onPress={() => setShowTimePicker(!showTimePicker)}>
+                <Text style={[styles.timeBtnText, { color: theme.tabIconDefault }]}>{!showTimePicker ? `时间 ${displayTime}` : '修改日期'}</Text>
+                <ChevronRightSmall size={14} color={theme.tabIconDefault} style={showTimePicker && { transform: [{ rotate: '180deg' }] }} />
+              </Pressable>
+            ) : (
+              <View /> // Spacer to push confirm button to the right if needed, or just let space-between handle it
+            )}
 
-            <Pressable onPress={onConfirm}>
+            <Pressable onPress={onConfirm} style={styles.confirmBtnWrapper}>
               <Text style={[styles.confirmBtnText, { color: accentColor }]}>确定</Text>
             </Pressable>
           </View>
@@ -366,6 +385,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.1)',
   },
   timeBtnText: { fontSize: Typography.size.body, fontWeight: '500' },
+  confirmBtnWrapper: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginRight: -8,
+  },
   confirmBtnText: { fontSize: Typography.size.body, fontWeight: '700' },
   weekdayHeader: {
     flexDirection: 'row',

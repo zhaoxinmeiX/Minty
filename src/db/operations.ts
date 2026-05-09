@@ -143,7 +143,7 @@ export type BillListQueryParams = {
   type?: BillListType;
   minAmount?: number;
   maxAmount?: number;
-  categoryId?: number;
+  categoryIds?: number[];
   keyword?: string;
 };
 
@@ -189,7 +189,7 @@ const buildBillListQuery = (
   params: BillListQueryParams,
   options: BillListQueryBuildOptions = {},
 ): { query: string; sqlParams: Array<string | number> } => {
-  const { ledgerId, startDate, endDate, type = 'all', minAmount, maxAmount, categoryId, keyword } = params;
+  const { ledgerId, startDate, endDate, type = 'all', minAmount, maxAmount, categoryIds, keyword } = params;
   const { cursor, limit, includeOrderBy = true } = options;
   const { start, end } = getDateBounds(startDate, endDate);
 
@@ -226,9 +226,10 @@ const buildBillListQuery = (
     sqlParams.push(maxAmount);
   }
 
-  if (typeof categoryId === 'number') {
-    query += ` AND r.category_id = ?`;
-    sqlParams.push(categoryId);
+  if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+    const placeholders = categoryIds.map(() => '?').join(',');
+    query += ` AND r.category_id IN (${placeholders})`;
+    sqlParams.push(...categoryIds);
   }
 
   if (keyword && keyword.trim().length > 0) {
@@ -318,13 +319,14 @@ export const getBillListPageAsync = async (
 
 export const getBillListCategoryOptions = (db: SQLiteDatabase, ledgerId: number): BillListCategoryOption[] => {
   return db.getAllSync<BillListCategoryOption>(
-    `SELECT DISTINCT
+    `SELECT
       r.category_id,
-      r.category,
-      IFNULL(c.icon, 'LayoutGrid') as icon
+      MAX(r.category) as category,
+      IFNULL(MAX(c.icon), 'LayoutGrid') as icon
      FROM records r
      LEFT JOIN categories c ON r.category_id = c.id
-     WHERE r.ledger_id = ?
+     WHERE r.ledger_id = ? AND r.category_id IS NOT NULL
+     GROUP BY r.category_id
      ORDER BY r.category_id ASC`,
     ledgerId,
   );
@@ -332,13 +334,14 @@ export const getBillListCategoryOptions = (db: SQLiteDatabase, ledgerId: number)
 
 export const getBillListCategoryOptionsAsync = (db: SQLiteDatabase, ledgerId: number): Promise<BillListCategoryOption[]> => {
   return db.getAllAsync<BillListCategoryOption>(
-    `SELECT DISTINCT
+    `SELECT
       r.category_id,
-      r.category,
-      IFNULL(c.icon, 'LayoutGrid') as icon
+      MAX(r.category) as category,
+      IFNULL(MAX(c.icon), 'LayoutGrid') as icon
      FROM records r
      LEFT JOIN categories c ON r.category_id = c.id
-     WHERE r.ledger_id = ?
+     WHERE r.ledger_id = ? AND r.category_id IS NOT NULL
+     GROUP BY r.category_id
      ORDER BY r.category_id ASC`,
     ledgerId,
   );

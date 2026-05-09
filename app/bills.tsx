@@ -71,7 +71,7 @@ export default function BillsScreen() {
   const hasLoadedAtLeastOnceRef = useRef(false);
 
   const initialType = (params.type as BillListType) || 'all';
-  const initialCategoryId = params.categoryId ? Number(params.categoryId) : undefined;
+  const initialCategoryIds = params.categoryId ? [Number(params.categoryId)] : undefined;
   const initialStartDate = params.startDate && isValidDate(params.startDate) ? params.startDate : undefined;
   const initialEndDate = params.endDate && isValidDate(params.endDate) ? params.endDate : undefined;
 
@@ -105,7 +105,7 @@ export default function BillsScreen() {
     typeDraft,
     minAmountInput,
     maxAmountInput,
-    categoryDraftId,
+    categoryDraftIds,
     animatedBackdropStyle,
     animatedFilterSheetStyle,
     setStartDateInput,
@@ -113,7 +113,7 @@ export default function BillsScreen() {
     setTypeDraft,
     setMinAmountInput,
     setMaxAmountInput,
-    setCategoryDraftId,
+    setCategoryDraftIds,
     handleApplyFilters,
     handleResetFilters,
     handleToggleFilters,
@@ -124,7 +124,7 @@ export default function BillsScreen() {
     handleClearDateRange,
   } = useBillFilters({
     initialType,
-    initialCategoryId,
+    initialCategoryIds,
     initialStartDate,
     initialEndDate,
     screenHeight,
@@ -138,10 +138,10 @@ export default function BillsScreen() {
       type: filters.type,
       minAmount: filters.minAmount,
       maxAmount: filters.maxAmount,
-      categoryId: filters.categoryId,
+      categoryIds: filters.categoryIds,
       keyword: appliedKeyword,
     }),
-    [activeLedgerId, appliedKeyword, filters.categoryId, filters.endDate, filters.maxAmount, filters.minAmount, filters.startDate, filters.type],
+    [activeLedgerId, appliedKeyword, filters.categoryIds, filters.endDate, filters.maxAmount, filters.minAmount, filters.startDate, filters.type],
   );
 
   const hasFilters = useMemo(() => {
@@ -151,7 +151,7 @@ export default function BillsScreen() {
       !!filters.endDate ||
       filters.minAmount !== undefined ||
       filters.maxAmount !== undefined ||
-      filters.categoryId !== undefined
+      !!(filters.categoryIds && filters.categoryIds.length > 0)
     );
   }, [filters]);
 
@@ -288,9 +288,15 @@ export default function BillsScreen() {
     });
   }, [monthSummaryByKey, records]);
 
-  const selectedCategory = useMemo(() => categoryOptions.find((item) => item.category_id === categoryDraftId), [categoryDraftId, categoryOptions]);
+  const selectedCategoryNames = useMemo(
+    () => categoryOptions.filter((item) => categoryDraftIds?.includes(item.category_id)).map((item) => item.category).join('、'),
+    [categoryDraftIds, categoryOptions]
+  );
 
-  const appliedCategory = useMemo(() => categoryOptions.find((item) => item.category_id === filters.categoryId), [categoryOptions, filters.categoryId]);
+  const appliedCategories = useMemo(
+    () => categoryOptions.filter((item) => filters.categoryIds?.includes(item.category_id)),
+    [categoryOptions, filters.categoryIds]
+  );
 
   const openLedgerPicker = () => {
     if (!ledgerButtonRef.current) {
@@ -460,8 +466,8 @@ export default function BillsScreen() {
         minAmountInput={minAmountInput}
         maxAmountInput={maxAmountInput}
         typeDraft={typeDraft}
-        selectedCategoryId={categoryDraftId}
-        selectedCategoryName={selectedCategory?.category}
+        selectedCategoryIds={categoryDraftIds}
+        selectedCategoryName={selectedCategoryNames}
         categoryOptions={categoryOptions}
         animatedBackdropStyle={animatedBackdropStyle}
         animatedFilterSheetStyle={animatedFilterSheetStyle}
@@ -476,7 +482,13 @@ export default function BillsScreen() {
         onMinAmountChange={setMinAmountInput}
         onMaxAmountChange={setMaxAmountInput}
         onTypeChange={setTypeDraft}
-        onSelectCategory={setCategoryDraftId}
+        onToggleCategory={(id) => {
+          if (id === undefined) {
+            setCategoryDraftIds([]);
+          } else {
+            setCategoryDraftIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+          }
+        }}
         onReset={handleResetFilters}
         onApply={handleApplyFilters}
       />
@@ -515,9 +527,9 @@ export default function BillsScreen() {
         onClose={() => setIsLedgerModalVisible(false)}
       />
 
-      {appliedCategory && (
+      {appliedCategories.length > 0 && (
         <View style={styles.appliedHint}>
-          <Text style={styles.appliedHintText}>已筛选分类：{appliedCategory.category}</Text>
+          <Text style={styles.appliedHintText}>已筛选分类：{appliedCategories.map(c => c.category).join('、')}</Text>
         </View>
       )}
     </View>

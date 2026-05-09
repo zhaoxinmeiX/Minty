@@ -9,13 +9,13 @@ import { styles } from './BillFilterModal.styles';
 
 type Props = {
   categoryOptions: CategoryOption[];
-  selectedCategoryId?: number;
-  onSelectCategory: (categoryId?: number) => void;
+  selectedCategoryIds: number[];
+  onToggleCategory: (categoryId?: number) => void;
   onCloseCategoryPicker: () => void;
   onClose: () => void;
 };
 
-export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryId, onSelectCategory, onCloseCategoryPicker, onClose }: Props) {
+export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryIds, onToggleCategory, onCloseCategoryPicker, onClose }: Props) {
   const theme = Colors.light;
 
   return (
@@ -25,7 +25,7 @@ export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryId, 
           <ArrowLeft size={20} color={theme.homeMuted} />
         </Pressable>
 
-        <Text style={styles.filterMainTitle}>分类</Text>
+        <Text style={[styles.filterMainTitle, { fontSize: 18 }]}>选择分类</Text>
 
         <Pressable style={styles.headerIconBtnPlain} onPress={onClose} hitSlop={8}>
           <CircleX size={22} color={theme.homeMuted} />
@@ -34,20 +34,20 @@ export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryId, 
 
       <FlatList
         data={categoryOptions}
-        keyExtractor={(item) => item.category_id.toString()}
+        keyExtractor={(item, index) => item?.category_id != null ? item.category_id.toString() : `index-${index}`}
         style={styles.categoryList}
         contentContainerStyle={styles.categoryListContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <Pressable
-            style={[styles.categoryItem, selectedCategoryId === undefined && styles.categoryItemActive]}
+            style={[styles.categoryItem, selectedCategoryIds.length === 0 && styles.categoryItemActive]}
             onPress={() => {
-              onSelectCategory(undefined);
+              onToggleCategory(undefined);
               onCloseCategoryPicker();
             }}
           >
-            <Text style={[styles.categoryItemText, selectedCategoryId === undefined && styles.categoryItemTextActive]}>不限制</Text>
-            {selectedCategoryId === undefined ? (
+            <Text style={[styles.categoryItemText, selectedCategoryIds.length === 0 && styles.categoryItemTextActive]}>不限制</Text>
+            {selectedCategoryIds.length === 0 ? (
               <View style={[styles.categoryCheck, styles.categoryCheckActive]}>
                 <Check size={14} color="#FFFFFF" />
               </View>
@@ -55,13 +55,12 @@ export function BillFilterCategoryPicker({ categoryOptions, selectedCategoryId, 
           </Pressable>
         }
         renderItem={({ item }) => {
-          const selected = item.category_id === selectedCategoryId;
+          const selected = selectedCategoryIds.includes(item.category_id);
           return (
             <Pressable
               style={[styles.categoryItem, selected && styles.categoryItemActive]}
               onPress={() => {
-                onSelectCategory(item.category_id);
-                onCloseCategoryPicker();
+                onToggleCategory(item.category_id);
               }}
             >
               <Text style={[styles.categoryItemText, selected && styles.categoryItemTextActive]}>{item.category}</Text>
