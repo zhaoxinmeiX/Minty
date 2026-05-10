@@ -1,18 +1,15 @@
-const tintColorLight = '#6E7D42';
-export const ACCENT_COLOR = '#F98C58';
-
 export const Colors = {
   light: {
     text: '#2C3420',
     background: '#F7F4EC',
-    tint: tintColorLight,
+    tint: '#6E7D42',
     tabIconDefault: '#8B907B',
-    tabIconSelected: tintColorLight,
+    tabIconSelected: '#6E7D42',
     card: '#FFF9F1',
     border: '#E8DFC7',
     expense: '#DD724A',
     income: '#648A5C',
-    accent: ACCENT_COLOR,
+    accent: '#F98C58',
     popoverBg: '#FFF9F1',
     popoverText: '#2C3420',
     popoverIconBg: '#EEF3DE',
