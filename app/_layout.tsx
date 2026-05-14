@@ -83,6 +83,7 @@ const initDatabase = async (db: SQLiteDatabase) => {
         ],
       },
       { name: '宠物', icon: 'paw', type: 'expense' },
+      { name: '保险', icon: 'shield-check-outline', type: 'expense' },
       { name: '学费签证', icon: 'wallet-outline', type: 'expense' },
       { name: '工资', icon: 'cash-multiple', type: 'income' },
       { name: '理财', icon: 'chart-line', type: 'income' },
