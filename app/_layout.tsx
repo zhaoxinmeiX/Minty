@@ -24,9 +24,9 @@ SplashScreen.preventAutoHideAsync();
 
 const initDatabase = async (db: SQLiteDatabase) => {
   // 强制删库重建 (开发阶段 - 暂时注释以防外键冲突)
-  await db.execAsync('DROP TABLE IF EXISTS records;');
-  await db.execAsync('DROP TABLE IF EXISTS categories;');
-  await db.execAsync('DROP TABLE IF EXISTS ledgers;');
+  // await db.execAsync('DROP TABLE IF EXISTS records;');
+  // await db.execAsync('DROP TABLE IF EXISTS categories;');
+  // await db.execAsync('DROP TABLE IF EXISTS ledgers;');
 
   await db.execAsync(INIT_QUERIES);
 
