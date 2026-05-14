@@ -14,11 +14,12 @@ import { DateTimePickerModal } from '@/components/add/DateTimePickerModal';
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
 import { NoteSuggestionList } from '@/components/add/NoteSuggestionList';
 import { NumericPad } from '@/components/add/NumericPad';
+import { RecurringSettingsPanel } from '@/components/add/RecurringSettingsPanel';
 import { ScreenBackground } from '@/components/common/ScreenBackground';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { addRecord, getRecordById, getRecordNoteSuggestionsAsync, RecordNoteSuggestion, updateRecord } from '@/src/db/operations';
+import { addRecord, addRecordsBatch, getRecordById, getRecordNoteSuggestionsAsync, RecordNoteSuggestion, updateRecord } from '@/src/db/operations';
 import { Category } from '@/src/db/schema';
 import { useCategories } from '@/src/hooks/useCategories';
 import { useCategoryPopover } from '@/src/hooks/useCategoryPopover';
@@ -26,7 +27,8 @@ import { useLedgers } from '@/src/hooks/useLedgers';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { EditingCategory, ModalType } from '@/src/types';
-import { parseISODate } from '@/src/utils/date';
+import { formatDateTimeToISO, parseISODate } from '@/src/utils/date';
+import { generateRecurringDates, getFrequencyLabel, RecurringFrequency, WEEKDAY_LABELS } from '@/src/utils/recurring';
 
 const TAB_ROUTES = {
   index: '/',
@@ -58,6 +60,7 @@ export default function AddScreen() {
   const { id, mode, date: paramDate } = useLocalSearchParams<{ id: string; mode: string; date?: string }>();
   const isEdit = mode === 'edit';
   const isCopy = mode === 'copy';
+  const isRecurring = mode === 'recurring';
   const isCompactLayout = screenHeight <= 860;
 
   const [type, setType] = useState<'expense' | 'income'>('expense');
@@ -76,6 +79,13 @@ export default function AddScreen() {
   const [ledgerAnchorFrame, setLedgerAnchorFrame] = useState<LedgerPickerAnchorFrame | null>(null);
   const [isNoteInputFocused, setIsNoteInputFocused] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  // Recurring mode state
+  const [recurringStartDate, setRecurringStartDate] = useState(new Date());
+  const [recurringEndDate, setRecurringEndDate] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return d; });
+  const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>('weekly');
+  const [recurringDayOfWeek, setRecurringDayOfWeek] = useState(1);
+  const [recurringDayOfMonth, setRecurringDayOfMonth] = useState(1);
+  const [recurringDatePickerTarget, setRecurringDatePickerTarget] = useState<'start' | 'end' | null>(null);
   const ledgerButtonRef = React.useRef<View>(null);
   const defaultCategoryKeyRef = React.useRef('');
   const noteSuggestionRequestIdRef = React.useRef(0);
@@ -321,6 +331,17 @@ export default function AddScreen() {
     }
   };
 
+  const recurringDates = useMemo(() => {
+    if (!isRecurring) return [];
+    return generateRecurringDates({
+      startDate: recurringStartDate,
+      endDate: recurringEndDate,
+      frequency: recurringFrequency,
+      dayOfWeek: recurringFrequency === 'weekly' || recurringFrequency === 'biweekly' ? recurringDayOfWeek : undefined,
+      dayOfMonth: recurringFrequency === 'monthly' ? recurringDayOfMonth : undefined,
+    });
+  }, [isRecurring, recurringStartDate, recurringEndDate, recurringFrequency, recurringDayOfWeek, recurringDayOfMonth]);
+
   const handleSaveRecord = (stayOnPage = false) => {
     const evaluatedAmount = evaluateExpression(amount);
     const numericAmount = parseFloat(evaluatedAmount);
@@ -331,6 +352,43 @@ export default function AddScreen() {
     }
     if (!selectedCategory) {
       Alert.alert('提示', '请选择一个分类');
+      return;
+    }
+
+    // Recurring mode: batch generate
+    if (isRecurring) {
+      if (recurringDates.length === 0) {
+        Alert.alert('提示', '当前设置没有匹配的日期，请调整日期范围或频率');
+        return;
+      }
+      Alert.alert(
+        '确认生成',
+        `将生成 ${recurringDates.length} 条${type === 'expense' ? '支出' : '收入'}记录，每条 ${numericAmount.toFixed(2)} 元`,
+        [
+          { text: '取消', style: 'cancel' },
+          {
+            text: '确认',
+            onPress: () => {
+              const records = recurringDates.map((d) => ({
+                amount: numericAmount,
+                type,
+                category_id: selectedCategory!.id,
+                sub_category_id: selectedSubCategory ? selectedSubCategory.id : null,
+                category: selectedCategory!.name,
+                sub_category: selectedSubCategory ? selectedSubCategory.name : null,
+                note: note || null,
+                ledger_id: activeLedgerId,
+                created_at: formatDateTimeToISO(d),
+              }));
+              const count = addRecordsBatch(db, records);
+              bumpDataVersion();
+              Alert.alert('完成', `已成功生成 ${count} 条记录`, [
+                { text: '好的', onPress: () => closeAddScreen() },
+              ]);
+            },
+          },
+        ],
+      );
       return;
     }
 
@@ -474,29 +532,37 @@ export default function AddScreen() {
 
       </View>
 
-      <View style={[styles.contentSheet, isCompactLayout && styles.contentSheetCompact, { backgroundColor: theme.homeSurface }]}>
-        <View
-          style={[
-            styles.categorySection,
-            isCompactLayout && styles.categorySectionCompact,
-            shouldScrollCategories && styles.categorySectionScrollable,
-            shouldScrollCategories && isCompactLayout && styles.categorySectionScrollableCompact,
-          ]}
+      <View style={[styles.contentSheet, isCompactLayout && styles.contentSheetCompact, { backgroundColor: theme.homeSurface, flex: 1 }]}>
+        <ScrollView 
+          style={{ flex: 1 }} 
+          contentContainerStyle={{ paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {shouldScrollCategories ? (
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.categoryScroll}>
-              <CategoryGrid
-                categories={categories}
-                selectedCategory={selectedCategory}
-                selectedSubCategory={selectedSubCategory}
-                onSelectMain={handleSelectMainCategory}
-                onManage={() => setModalType('manage_cats')}
-                categoryRefs={popover.categoryRefs}
-                accentColor={accentColor}
-                compact={isCompactLayout}
-              />
-            </ScrollView>
-          ) : (
+          {isRecurring && (
+            <RecurringSettingsPanel
+              accentColor={accentColor}
+              startDate={recurringStartDate}
+              endDate={recurringEndDate}
+              frequency={recurringFrequency}
+              dayOfWeek={recurringDayOfWeek}
+              dayOfMonth={recurringDayOfMonth}
+              previewCount={recurringDates.length}
+              totalAmount={recurringDates.length > 0 && amount ? parseFloat(evaluateExpression(amount)) * recurringDates.length : 0}
+              onStartDatePress={() => { setTempDate(new Date(recurringStartDate)); setRecurringDatePickerTarget('start'); setModalType('datetime'); }}
+              onEndDatePress={() => { setTempDate(new Date(recurringEndDate)); setRecurringDatePickerTarget('end'); setModalType('datetime'); }}
+              onFrequencyChange={setRecurringFrequency}
+              onDayOfWeekChange={setRecurringDayOfWeek}
+              onDayOfMonthChange={setRecurringDayOfMonth}
+            />
+          )}
+          <View
+            style={[
+              styles.categorySection,
+              isCompactLayout && styles.categorySectionCompact,
+              // Removed the scrollable logic here since it's now handled by the parent ScrollView
+            ]}
+          >
             <CategoryGrid
               categories={categories}
               selectedCategory={selectedCategory}
@@ -507,8 +573,8 @@ export default function AddScreen() {
               accentColor={accentColor}
               compact={isCompactLayout}
             />
-          )}
-        </View>
+          </View>
+        </ScrollView>
 
         <View
           style={[
@@ -616,10 +682,20 @@ export default function AddScreen() {
         tempDate={tempDate}
         onDateChange={setTempDate}
         onConfirm={() => {
-          setDate(tempDate);
+          if (isRecurring && recurringDatePickerTarget === 'start') {
+            setRecurringStartDate(tempDate);
+          } else if (isRecurring && recurringDatePickerTarget === 'end') {
+            setRecurringEndDate(tempDate);
+          } else {
+            setDate(tempDate);
+          }
           setModalType('none');
+          setRecurringDatePickerTarget(null);
         }}
-        onCancel={() => setModalType('none')}
+        onCancel={() => {
+          setModalType('none');
+          setRecurringDatePickerTarget(null);
+        }}
       />
 
       <LedgerPickerModal

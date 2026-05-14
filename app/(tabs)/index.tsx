@@ -263,6 +263,10 @@ export default function RecordsScreen() {
     router.push('/add');
   };
 
+  const openRecurringPage = () => {
+    router.push({ pathname: '/add', params: { mode: 'recurring' } });
+  };
+
   const openLedgerPicker = () => {
     if (!ledgerButtonRef.current) {
       setLedgerAnchorFrame(null);
@@ -391,7 +395,7 @@ export default function RecordsScreen() {
         }
       />
 
-      <Pressable accessibilityRole="button" onPress={openAddPage} style={styles.fabWrap}>
+      <Pressable accessibilityRole="button" onPress={openAddPage} onLongPress={openRecurringPage} delayLongPress={400} style={styles.fabWrap}>
         {({ pressed }) => (
           <LinearGradient
             colors={[theme.homeAccent, '#E4743F']}

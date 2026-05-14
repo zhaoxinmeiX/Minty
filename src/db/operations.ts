@@ -562,6 +562,40 @@ export const addRecord = (db: SQLiteDatabase, data: RecordInsertData) => {
   }
 };
 
+export const addRecordsBatch = (db: SQLiteDatabase, records: RecordInsertData[]): number => {
+  if (records.length === 0) return 0;
+
+  let insertedCount = 0;
+
+  db.withTransactionSync(() => {
+    const statement = db.prepareSync(
+      `INSERT INTO records (amount, type, category_id, sub_category_id, category, sub_category, note, ledger_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+
+    try {
+      for (const data of records) {
+        statement.executeSync(
+          data.amount,
+          data.type,
+          data.category_id,
+          data.sub_category_id,
+          data.category,
+          data.sub_category,
+          data.note,
+          data.ledger_id,
+          data.created_at ?? new Date().toISOString(),
+        );
+        insertedCount++;
+      }
+    } finally {
+      statement.finalizeSync();
+    }
+  });
+
+  return insertedCount;
+};
+
 export const updateRecord = (db: SQLiteDatabase, id: number, data: RecordUpdateData) => {
   return db.runSync(
     `UPDATE records SET amount = ?, type = ?, category_id = ?, sub_category_id = ?, category = ?, sub_category = ?, note = ?, ledger_id = ?, created_at = ?
