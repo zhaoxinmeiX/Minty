@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { DATABASE_NAME, INIT_QUERIES } from '@/src/db/schema';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
@@ -5,10 +6,9 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteDatabase, SQLiteProvider } from 'expo-sqlite';
 import { useEffect } from 'react';
+import { Platform, StyleSheet, UIManager } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
-import { View, StyleSheet, UIManager, Platform } from 'react-native';
-import { Colors } from '@/constants/Colors';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -24,9 +24,9 @@ SplashScreen.preventAutoHideAsync();
 
 const initDatabase = async (db: SQLiteDatabase) => {
   // 强制删库重建 (开发阶段 - 暂时注释以防外键冲突)
-  // await db.execAsync('DROP TABLE IF EXISTS records;');
-  // await db.execAsync('DROP TABLE IF EXISTS categories;');
-  // await db.execAsync('DROP TABLE IF EXISTS ledgers;');
+  await db.execAsync('DROP TABLE IF EXISTS records;');
+  await db.execAsync('DROP TABLE IF EXISTS categories;');
+  await db.execAsync('DROP TABLE IF EXISTS ledgers;');
 
   await db.execAsync(INIT_QUERIES);
 
@@ -40,56 +40,56 @@ const initDatabase = async (db: SQLiteDatabase) => {
     type: 'expense' | 'income';
     children?: Array<{ name: string; icon: string }>;
   }> = [
-    {
-      name: '超市',
-      icon: 'ShoppingCart',
-      type: 'expense',
-    },
-    {
-      name: '车',
-      icon: 'Car',
-      type: 'expense',
-      children: [
-        { name: '加油', icon: 'Fuel' },
-        { name: '停车费', icon: 'ParkingCircle' },
-        { name: '维修保养', icon: 'Wrench' },
-        { name: '汽车用品', icon: 'Package' },
-        { name: '保险年检', icon: 'ShieldPlus' },
-        { name: '违章罚款', icon: 'FileCheck' },
-      ],
-    },
-    { name: '餐饮', icon: 'Utensils', type: 'expense' },
-    { name: '日常其他', icon: 'LayoutGrid', type: 'expense' },
-    {
-      name: '租房',
-      icon: 'Home',
-      type: 'expense',
-      children: [
-        { name: 'Airbnb', icon: 'Home' },
-        { name: '房租', icon: 'Home' },
-        { name: '水电网', icon: 'Home' },
-        { name: '其他', icon: 'LayoutGrid' },
-      ],
-    },
-    {
-      name: '公共交通',
-      icon: 'Plane',
-      type: 'expense',
-      children: [
-        { name: '飞机', icon: 'Plane' },
-        { name: '高铁', icon: 'Train' },
-        { name: '公交/地铁', icon: 'Bus' },
-        { name: '打车', icon: 'Car' },
-      ],
-    },
-    { name: '宠物', icon: 'Heart', type: 'expense' },
-    { name: '学费签证等', icon: 'GraduationCap', type: 'expense' },
-    { name: '工资', icon: 'DollarSign', type: 'income' },
-    { name: '理财', icon: 'TrendingUp', type: 'income' },
-    { name: '红包', icon: 'Gift', type: 'income' },
-    { name: '报销', icon: 'Receipt', type: 'income' },
-    { name: '其他收入', icon: 'PlusCircle', type: 'income' },
-  ];
+      {
+        name: '超市',
+        icon: 'cart-outline',
+        type: 'expense',
+      },
+      {
+        name: '车',
+        icon: 'car',
+        type: 'expense',
+        children: [
+          { name: '加油', icon: 'gas-station-outline' },
+          { name: '停车费', icon: 'parking' },
+          { name: '维修保养', icon: 'wrench-outline' },
+          { name: '汽车用品', icon: 'package-variant' },
+          { name: '保险年检', icon: 'shield-check-outline' },
+          { name: '违章罚款', icon: 'file-document-outline' },
+        ],
+      },
+      { name: '餐饮', icon: 'silverware-fork-knife', type: 'expense' },
+      { name: '日常其他', icon: 'view-grid-outline', type: 'expense' },
+      {
+        name: '租房',
+        icon: 'home-outline',
+        type: 'expense',
+        children: [
+          { name: 'Airbnb', icon: 'bed-outline' },
+          { name: '房租', icon: 'home-outline' },
+          { name: '水电网', icon: 'lightning-bolt-outline' },
+          { name: '其他', icon: 'view-grid-outline' },
+        ],
+      },
+      {
+        name: '公共交通',
+        icon: 'bus',
+        type: 'expense',
+        children: [
+          { name: '飞机', icon: 'airplane' },
+          { name: '高铁', icon: 'train' },
+          { name: '公交/地铁', icon: 'bus' },
+          { name: '打车', icon: 'car' },
+        ],
+      },
+      { name: '宠物', icon: 'paw', type: 'expense' },
+      { name: '学费签证', icon: 'wallet-outline', type: 'expense' },
+      { name: '工资', icon: 'cash-multiple', type: 'income' },
+      { name: '理财', icon: 'chart-line', type: 'income' },
+      { name: '红包', icon: 'gift-outline', type: 'income' },
+      { name: '报销', icon: 'receipt-outline', type: 'income' },
+      { name: '其他收入', icon: 'plus-circle-outline', type: 'income' },
+    ];
 
   for (const category of defaultCategories) {
     await db.runAsync(
@@ -166,11 +166,11 @@ function RootLayoutNav() {
             animation: 'fade_from_bottom',
           }}
         >
-          <Stack.Screen 
-            name="(tabs)" 
-            options={{ 
+          <Stack.Screen
+            name="(tabs)"
+            options={{
               headerShown: false,
-            }} 
+            }}
           />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
           <Stack.Screen name="data-management" options={{ headerShown: false, animation: 'slide_from_right' }} />

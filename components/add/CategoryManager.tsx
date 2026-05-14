@@ -74,10 +74,13 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type,
                 </View>
 
                 {isExp &&
-                  subs.map((sub) => (
+                  subs.map((sub) => {
+                    const SubIcon = getIconComponent(sub.icon);
+                    return (
                     <View key={sub.id} style={[styles.treeRow, styles.subTreeRow, { backgroundColor: theme.card + '50' }]}>
                       <View style={styles.treeMain}>
-                        <Text style={[styles.treeText, { color: theme.text, marginLeft: 20 }]}>{sub.name}</Text>
+                        <SubIcon size={18} color={theme.text} style={{ marginLeft: 20 }} />
+                        <Text style={[styles.treeText, { color: theme.text }]}>{sub.name}</Text>
                       </View>
                       <View style={styles.treeActions}>
                         <Pressable onPress={() => onEdit({ ...sub })} style={styles.treeActionBtn}>
@@ -88,7 +91,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type,
                         </Pressable>
                       </View>
                     </View>
-                  ))}
+                    );
+                  })}
               </View>
             );
           })}

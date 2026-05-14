@@ -43,7 +43,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, selected
               styles.iconWrapper,
               compact && styles.iconWrapperCompact,
               {
-                backgroundColor: isSelected ? accentColor + '18' : theme.homeSurfaceStrong,
+                backgroundColor: isSelected ? accentColor + '38' : theme.homeSurfaceStrong,
               },
             ]}
           >
