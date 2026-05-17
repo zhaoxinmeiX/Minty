@@ -325,7 +325,7 @@ export default function AddScreen() {
 
       const result = new Function(`return (${cleanExpr})`)();
       if (typeof result !== 'number' || Number.isNaN(result) || !Number.isFinite(result)) return expr;
-      return Number(result.toFixed(2)).toString();
+      return (Math.round((result + Number.EPSILON) * 100) / 100).toString();
     } catch {
       return expr;
     }
