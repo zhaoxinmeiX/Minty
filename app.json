@@ -23,7 +23,8 @@
         "backgroundColor": "#DCE8B4"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.zhaoxinmei.Minty"
     },
     "web": {
       "bundler": "metro",

@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import * as Haptics from 'expo-haptics';
 import { Calculator, Delete, Reply } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -24,9 +25,16 @@ export const NumericPad: React.FC<NumericPadProps> = ({ onPress, onClear, onDele
   const buttonHeight = compact ? 48 : BUTTON_HEIGHT;
   const buttonGap = compact ? 8 : 6;
 
+  const playHaptic = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const renderButton = (label: string | React.ReactNode, action: () => void, options: { flex?: number; bg?: string; color?: string; fontSize?: number; height?: number } = {}) => (
     <Pressable
-      onPress={action}
+      onPress={() => {
+        playHaptic();
+        action();
+      }}
       style={({ pressed }) => [
         styles.btn,
         compact && styles.btnCompact,
@@ -111,7 +119,10 @@ export const NumericPad: React.FC<NumericPadProps> = ({ onPress, onClear, onDele
           </View>
         </View>
         <Pressable
-          onPress={onSave}
+          onPress={() => {
+            playHaptic();
+            onSave();
+          }}
           style={({ pressed }) => [
             styles.saveBtn,
             compact && styles.saveBtnCompact,
