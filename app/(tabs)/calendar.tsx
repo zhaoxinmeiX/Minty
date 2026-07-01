@@ -240,10 +240,10 @@ export default function CalendarScreen() {
       let secondaryText = getLunarLabel(date.year, date.month, date.day);
       let secondaryColor = theme.homeMuted;
       if (hasExpense) {
-        secondaryText = `-${summary!.expense.toFixed(0)}`;
+        secondaryText = `-${summary!.expense.toFixed(2)}`;
         secondaryColor = theme.expense;
       } else if (hasIncome) {
-        secondaryText = `+${summary!.income.toFixed(0)}`;
+        secondaryText = `+${summary!.income.toFixed(2)}`;
         secondaryColor = theme.income;
       }
 
