@@ -83,6 +83,7 @@ export default function TabLayout() {
           name="calendar"
           options={{
             headerShown: false,
+            lazy: true,
             title: '日历',
             tabBarIcon: ({ color, focused }) => <TabIcon Icon={Calendar} title="日历" color={color} focused={focused} />,
           }}

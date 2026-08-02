@@ -171,6 +171,16 @@ export default function CalendarScreen() {
     }, [currentMonth, dataVersion, fetchMonthSummaries, fetchRecordsForMonth, selectedDate, setSelectedDateContext, setLastTab]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      const task = InteractionManager.runAfterInteractions(() => {
+        calendarRef.current?.scrollToMonth(`${currentMonthRef.current}-01`);
+      });
+
+      return () => task.cancel();
+    }, []),
+  );
+
   React.useEffect(() => {
     if (!hasSyncedMonthRef.current) {
       hasSyncedMonthRef.current = true;
