@@ -7,7 +7,7 @@ import { Alert, AppState, Keyboard, Platform, Pressable, ScrollView, StyleSheet,
 
 import { AmountInput } from '@/components/add/AmountInput';
 import { CategoryEditModal } from '@/components/add/CategoryEditModal';
-import { CATEGORY_GRID_COLUMN_COUNT, CategoryGrid } from '@/components/add/CategoryGrid';
+import { CategoryGrid } from '@/components/add/CategoryGrid';
 import { CategoryManager } from '@/components/add/CategoryManager';
 import { CategoryPopover } from '@/components/add/CategoryPopover';
 import { DateTimePickerModal } from '@/components/add/DateTimePickerModal';
@@ -467,8 +467,6 @@ export default function AddScreen() {
     date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }) + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 
   const result = useMemo(() => evaluateExpression(amount), [amount]);
-  const categoryRowCount = Math.ceil(categories.length / CATEGORY_GRID_COLUMN_COUNT);
-  const shouldScrollCategories = isCompactLayout ? categoryRowCount > 3 : categoryRowCount > 4;
   const fallbackRoute = TAB_ROUTES[lastTab as keyof typeof TAB_ROUTES] ?? TAB_ROUTES.index;
   const showNoteSuggestions = isNoteInputFocused && noteSuggestions.length > 0;
   const noteSuggestionBottomOffset = (keyboardHeight > 0 ? keyboardHeight : insets.bottom) + 60;
@@ -560,7 +558,6 @@ export default function AddScreen() {
             style={[
               styles.categorySection,
               isCompactLayout && styles.categorySectionCompact,
-              // Removed the scrollable logic here since it's now handled by the parent ScrollView
             ]}
           >
             <CategoryGrid
@@ -796,15 +793,6 @@ const styles = StyleSheet.create({
   },
   categorySectionCompact: {
     paddingTop: 8,
-  },
-  categorySectionScrollable: {
-    maxHeight: 308,
-  },
-  categorySectionScrollableCompact: {
-    maxHeight: 260,
-  },
-  categoryScroll: {
-    flexGrow: 0,
   },
   footerAvoiding: {
     marginTop: 'auto',
