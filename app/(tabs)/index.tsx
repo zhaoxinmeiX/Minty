@@ -13,6 +13,7 @@ import { Typography } from '@/constants/Typography';
 import { getMonthlyExpenseTotalAsync } from '@/src/db/operations';
 import { Ledger, RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useRecords } from '@/src/hooks/useRecords';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
@@ -39,6 +40,7 @@ const areRecordsSynced = (left: RecordItem[], right: RecordItem[]) =>
 export default function RecordsScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
   const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
   const setSelectedDateContext = useStore((state) => state.setSelectedDateContext);
@@ -230,41 +232,41 @@ export default function RecordsScreen() {
 
   const handleEdit = (record: RecordItem) => {
     setIsDetailVisible(false);
-    router.push({
+    navigateOnce(() => router.push({
       pathname: '/add',
       params: {
         id: record.id.toString(),
         mode: 'edit',
       },
-    });
+    }));
   };
 
   const handleCopy = (record: RecordItem) => {
     setIsDetailVisible(false);
-    router.push({
+    navigateOnce(() => router.push({
       pathname: '/add',
       params: {
         id: record.id.toString(),
         mode: 'copy',
       },
-    });
+    }));
   };
 
   const openBills = () => {
-    router.push('/bills');
+    navigateOnce(() => router.push('/bills'));
   };
 
   const openSearchPage = () => {
-    router.push('/search');
+    navigateOnce(() => router.push('/search'));
   };
 
   const openAddPage = () => {
     setSelectedDateContext(null);
-    router.push('/add');
+    navigateOnce(() => router.push('/add'));
   };
 
   const openRecurringPage = () => {
-    router.push({ pathname: '/add', params: { mode: 'recurring' } });
+    navigateOnce(() => router.push({ pathname: '/add', params: { mode: 'recurring' } }));
   };
 
   const openLedgerPicker = () => {

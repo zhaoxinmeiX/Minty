@@ -12,6 +12,7 @@ import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { CategoryStat, TimeRange, useStatsScreen } from '@/src/hooks/useStatsScreen';
 import { useStore } from '@/src/store';
@@ -79,6 +80,7 @@ function SegmentedControl<T extends string>({
 export default function StatsScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
   const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
   const setLastTab = useStore((state) => state.setLastTab);
@@ -156,7 +158,7 @@ export default function StatsScreen() {
       if (!target) return;
 
       const { startDate, endDate } = statsState.buildDateRange();
-      router.push({
+      navigateOnce(() => router.push({
         pathname: '/bills',
         params: {
           type: statsState.type,
@@ -164,9 +166,9 @@ export default function StatsScreen() {
           startDate,
           endDate,
         },
-      });
+      }));
     },
-    [router, statsState],
+    [navigateOnce, router, statsState],
   );
 
   const openLedgerPicker = useCallback(() => {

@@ -12,6 +12,7 @@ import { Typography } from '@/constants/Typography';
 import { deleteRecord, getRecordsForBillListAsync } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { groupRecordsByMonth, MonthlyRecordSection } from '@/src/utils/recordSections';
@@ -19,6 +20,7 @@ import { groupRecordsByMonth, MonthlyRecordSection } from '@/src/utils/recordSec
 export default function SearchScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const theme = Colors.light;
   const insets = useStableSafeAreaInsets();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
@@ -144,7 +146,7 @@ export default function SearchScreen() {
             },
             pressed && styles.closeBtnPressed,
           ]}
-          onPress={() => router.back()}
+          onPress={() => navigateOnce(() => router.back())}
         >
           <X size={20} color={theme.homeOlive} />
         </Pressable>
@@ -251,11 +253,11 @@ export default function SearchScreen() {
         onClose={() => setIsDetailVisible(false)}
         onEdit={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } });
+          navigateOnce(() => router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } }));
         }}
         onCopy={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } });
+          navigateOnce(() => router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } }));
         }}
         onDelete={(id) => {
           deleteRecord(db, id);

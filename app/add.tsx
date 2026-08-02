@@ -24,6 +24,7 @@ import { Category } from '@/src/db/schema';
 import { useCategories } from '@/src/hooks/useCategories';
 import { useCategoryPopover } from '@/src/hooks/useCategoryPopover';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { EditingCategory, ModalType } from '@/src/types';
@@ -46,6 +47,7 @@ type CategorySelectionTarget = {
 export default function AddScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const theme = Colors.light;
   const { height: screenHeight } = useWindowDimensions();
   const insets = useStableSafeAreaInsets();
@@ -473,12 +475,14 @@ export default function AddScreen() {
   const noteSuggestionBottomOffset = (keyboardAvoidanceOffset || insets.bottom) + 60;
 
   const closeAddScreen = () => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
+    navigateOnce(() => {
+      if (router.canGoBack()) {
+        router.back();
+        return;
+      }
 
-    router.replace(fallbackRoute);
+      router.replace(fallbackRoute);
+    });
   };
 
   const openLedgerPicker = () => {

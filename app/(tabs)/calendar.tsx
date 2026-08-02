@@ -17,6 +17,7 @@ import { Typography } from '@/constants/Typography';
 import { getDailySummaryByMonthAsync, getRecordsByLedgerAndMonthAsync } from '@/src/db/operations';
 import { RecordItem } from '@/src/db/schema';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { getLunarLabel } from '@/src/utils/lunar';
@@ -29,6 +30,7 @@ const WEEK_ROW_GAP = 4;
 export default function CalendarScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
   const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
   const setSelectedDateContext = useStore((state) => state.setSelectedDateContext);
@@ -218,8 +220,8 @@ export default function CalendarScreen() {
   };
 
   const openAddPage = useCallback(() => {
-    router.push({ pathname: '/add', params: { date: selectedDate } });
-  }, [router, selectedDate]);
+    navigateOnce(() => router.push({ pathname: '/add', params: { date: selectedDate } }));
+  }, [navigateOnce, router, selectedDate]);
 
   const { calendarWidth, calendarBodyHeight, dayCellSize } = useMemo(() => {
     const contentWidth = windowWidth - SCREEN_HORIZONTAL_PADDING * 2 - CALENDAR_SHELL_HORIZONTAL_PADDING * 2;
@@ -497,11 +499,11 @@ export default function CalendarScreen() {
         onClose={() => setIsDetailVisible(false)}
         onEdit={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } });
+          navigateOnce(() => router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } }));
         }}
         onCopy={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } });
+          navigateOnce(() => router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } }));
         }}
         onDelete={(id) => {
           Alert.alert('删除记录', '确定要删除这条账目吗？', [

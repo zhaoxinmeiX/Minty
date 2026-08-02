@@ -9,11 +9,13 @@ import { Colors } from '@/constants/Colors';
 import { ScreenBackground } from '@/components/common/ScreenBackground';
 import { Typography } from '@/constants/Typography';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStore } from '@/src/store';
 import { importExcelToLedger } from '@/src/utils/excel';
 
 export default function DataManagementScreen() {
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const db = useSQLiteContext();
   const theme = Colors.light;
   const insets = useStableSafeAreaInsets();
@@ -37,7 +39,7 @@ export default function DataManagementScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
+        <Pressable onPress={() => navigateOnce(() => router.back())} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
           <ChevronLeft size={22} color={theme.homeOlive} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.homeOlive }]}>数据管理</Text>

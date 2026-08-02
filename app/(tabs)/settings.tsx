@@ -5,11 +5,13 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, St
 
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const nickname = useStore((state) => state.nickname);
   const setNickname = useStore((state) => state.setNickname);
   const setLastTab = useStore((state) => state.setLastTab);
@@ -103,7 +105,7 @@ export default function SettingsScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: theme.homeMuted }]}>数据</Text>
             <View style={[styles.sectionCard, { backgroundColor: theme.homeSurface }]}>
-              <Pressable style={styles.listItem} onPress={() => router.push('/data-management')}>
+              <Pressable style={styles.listItem} onPress={() => navigateOnce(() => router.push('/data-management'))}>
                 <View style={[styles.iconWrapper, { backgroundColor: '#E4F1E3' }]}>
                   <Database size={20} color={theme.income} />
                 </View>
@@ -116,7 +118,7 @@ export default function SettingsScreen() {
 
               <View style={styles.divider} />
 
-              <Pressable style={styles.listItem} onPress={() => router.push('/ledgers')}>
+              <Pressable style={styles.listItem} onPress={() => navigateOnce(() => router.push('/ledgers'))}>
                 <View style={[styles.iconWrapper, { backgroundColor: theme.homeBlueSoft }]}>
                   <BookText size={20} color={theme.homeOlive} />
                 </View>

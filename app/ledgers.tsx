@@ -11,11 +11,13 @@ import { Typography } from '@/constants/Typography';
 import { addLedger, deleteLedger, getLedgersAsync, updateLedger } from '@/src/db/operations';
 import { Ledger } from '@/src/db/schema';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStore } from '@/src/store';
 import { parseISODate } from '@/src/utils/date';
 
 export default function LedgersScreen() {
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const db = useSQLiteContext();
   const theme = Colors.light;
   const insets = useStableSafeAreaInsets();
@@ -136,7 +138,7 @@ export default function LedgersScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
+        <Pressable onPress={() => navigateOnce(() => router.back())} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
           <ChevronLeft size={22} color={theme.homeOlive} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.homeOlive }]}>账本管理</Text>

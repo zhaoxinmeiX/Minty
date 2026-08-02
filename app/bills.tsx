@@ -23,6 +23,7 @@ import {
 import { RecordItem } from '@/src/db/schema';
 import { useBillFilters } from '@/src/hooks/useBillFilters';
 import { useLedgers } from '@/src/hooks/useLedgers';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStableSafeAreaInsets } from '@/src/hooks/useStableSafeAreaInsets';
 import { useStore } from '@/src/store';
 import { CategoryOption, RouteParams } from '@/src/types/bills';
@@ -55,6 +56,7 @@ function mergeRecordPages(existing: RecordItem[], incoming: RecordItem[]) {
 export default function BillsScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const params = useLocalSearchParams<RouteParams>();
   const theme = Colors.light;
   const { height: screenHeight } = useWindowDimensions();
@@ -389,7 +391,7 @@ export default function BillsScreen() {
         ledgerTriggerRef={ledgerButtonRef}
         showFilters={showFilters}
         hasFilters={hasFilters}
-        onBack={() => router.back()}
+        onBack={() => navigateOnce(() => router.back())}
         onKeywordChange={setKeyword}
         onSubmitKeyword={handleKeywordSubmit}
         onClearKeyword={handleKeywordClear}
@@ -540,11 +542,11 @@ export default function BillsScreen() {
         onClose={() => setIsDetailVisible(false)}
         onEdit={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } });
+          navigateOnce(() => router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'edit' } }));
         }}
         onCopy={(record) => {
           setIsDetailVisible(false);
-          router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } });
+          navigateOnce(() => router.push({ pathname: '/add', params: { id: record.id.toString(), mode: 'copy' } }));
         }}
         onDelete={(id) => {
           deleteRecord(db, id);
