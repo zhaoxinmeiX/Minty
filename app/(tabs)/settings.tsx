@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { BookText, ChevronRight, CircleEllipsis, Database, User } from 'lucide-react-native';
-import React, { useCallback } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -15,6 +15,10 @@ export default function SettingsScreen() {
   const setLastTab = useStore((state) => state.setLastTab);
   const theme = Colors.light;
   const insets = useStableSafeAreaInsets();
+  const [isNicknameModalVisible, setIsNicknameModalVisible] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState(nickname);
+  const nicknameInputRef = useRef<TextInput>(null);
+  const nicknameFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -23,23 +27,52 @@ export default function SettingsScreen() {
   );
 
   const handleEditNickname = () => {
-    Alert.prompt(
-      '修改昵称',
-      '请输入您的新昵称',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '保存',
-          onPress: (name?: string) => {
-            if (name && name.trim()) {
-              setNickname(name.trim());
-            }
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        '修改昵称',
+        '请输入您的新昵称',
+        [
+          { text: '取消', style: 'cancel' },
+          {
+            text: '保存',
+            onPress: (name?: string) => {
+              if (name?.trim()) {
+                setNickname(name.trim());
+              }
+            },
           },
-        },
-      ],
-      'plain-text',
-      nickname,
-    );
+        ],
+        'plain-text',
+        nickname,
+      );
+      return;
+    }
+
+    setNicknameDraft(nickname);
+    setIsNicknameModalVisible(true);
+  };
+
+  const closeNicknameModal = () => {
+    if (nicknameFocusTimerRef.current) {
+      clearTimeout(nicknameFocusTimerRef.current);
+      nicknameFocusTimerRef.current = null;
+    }
+    setIsNicknameModalVisible(false);
+  };
+
+  const focusNicknameInput = () => {
+    nicknameFocusTimerRef.current = setTimeout(() => {
+      nicknameInputRef.current?.focus();
+      nicknameFocusTimerRef.current = null;
+    }, 200);
+  };
+
+  const saveNickname = () => {
+    const nextNickname = nicknameDraft.trim();
+    if (!nextNickname) return;
+
+    setNickname(nextNickname);
+    closeNicknameModal();
   };
 
   const handleAbout = () => {
@@ -113,6 +146,56 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={Platform.OS === 'android' && isNicknameModalVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        navigationBarTranslucent
+        onRequestClose={closeNicknameModal}
+        onShow={focusNicknameInput}
+      >
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView style={styles.keyboardAvoidingContainer} behavior="height" pointerEvents="box-none">
+            <View style={[styles.nicknameDialog, { backgroundColor: theme.homeSurface }]}>
+              <Text style={[styles.nicknameDialogTitle, { color: theme.text }]}>修改昵称</Text>
+              <TextInput
+                ref={nicknameInputRef}
+                selectTextOnFocus
+                showSoftInputOnFocus
+                maxLength={20}
+                value={nicknameDraft}
+                onChangeText={setNicknameDraft}
+                onSubmitEditing={saveNickname}
+                returnKeyType="done"
+                placeholder="请输入昵称"
+                placeholderTextColor={theme.homeMuted}
+                style={[
+                  styles.nicknameInput,
+                  {
+                    color: theme.text,
+                    backgroundColor: theme.homeSurfaceStrong,
+                    borderColor: theme.border,
+                  },
+                ]}
+              />
+              <View style={styles.nicknameActions}>
+                <Pressable style={styles.nicknameCancelButton} onPress={closeNicknameModal}>
+                  <Text style={[styles.nicknameCancelText, { color: theme.homeMuted }]}>取消</Text>
+                </Pressable>
+                <Pressable
+                  disabled={!nicknameDraft.trim()}
+                  style={[styles.nicknameSaveButton, { backgroundColor: theme.homeAccent }, !nicknameDraft.trim() && styles.nicknameSaveButtonDisabled]}
+                  onPress={saveNickname}
+                >
+                  <Text style={styles.nicknameSaveText}>保存</Text>
+                </Pressable>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -180,5 +263,64 @@ const styles = StyleSheet.create({
   listHint: {
     fontSize: Typography.size.caption,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  keyboardAvoidingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nicknameDialog: {
+    width: '88%',
+    borderRadius: 24,
+    padding: 20,
+    elevation: 10,
+  },
+  nicknameDialogTitle: {
+    fontSize: Typography.size.title,
+    lineHeight: Typography.lineHeight.title,
+    fontWeight: '800',
+    marginBottom: 16,
+  },
+  nicknameInput: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 0,
+    fontSize: Typography.size.body,
+  },
+  nicknameActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 18,
+  },
+  nicknameCancelButton: {
+    minWidth: 72,
+    height: 42,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nicknameCancelText: {
+    fontSize: Typography.size.body,
+    fontWeight: '700',
+  },
+  nicknameSaveButton: {
+    minWidth: 88,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nicknameSaveButtonDisabled: {
+    opacity: 0.4,
+  },
+  nicknameSaveText: {
+    color: '#FFF',
+    fontSize: Typography.size.body,
+    fontWeight: '800',
+  },
 });
-
