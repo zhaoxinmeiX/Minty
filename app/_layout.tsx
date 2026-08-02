@@ -158,13 +158,17 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const themeColors = Colors.light;
+  const defaultAnimation = 'fade_from_bottom' as const;
+  const horizontalAnimation = Platform.OS === 'android' ? 'fade' : 'slide_from_right';
+  const verticalAnimation = Platform.OS === 'android' ? 'fade_from_bottom' : 'slide_from_bottom';
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase}>
         <Stack
           screenOptions={{
-            animation: 'fade_from_bottom',
+            animation: defaultAnimation,
+            contentStyle: { backgroundColor: themeColors.homeBackground },
           }}
         >
           <Stack.Screen
@@ -174,11 +178,11 @@ function RootLayoutNav() {
             }}
           />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="data-management" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="ledgers" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="search" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="bills" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="add" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="data-management" options={{ headerShown: false, animation: horizontalAnimation }} />
+          <Stack.Screen name="ledgers" options={{ headerShown: false, animation: horizontalAnimation }} />
+          <Stack.Screen name="search" options={{ headerShown: false, animation: horizontalAnimation }} />
+          <Stack.Screen name="bills" options={{ headerShown: false, animation: horizontalAnimation }} />
+          <Stack.Screen name="add" options={{ headerShown: false, animation: verticalAnimation }} />
         </Stack>
       </SQLiteProvider>
     </SafeAreaProvider>
