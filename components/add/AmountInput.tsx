@@ -62,21 +62,19 @@ export const AmountInput: React.FC<AmountInputProps> = ({
       </View>
 
       <View style={[styles.topRow, compact && styles.topRowCompact, { backgroundColor: theme.homeSurfaceStrong }]}>
-        <View style={{ flex: 1 }}>
-          <TextInput
-            ref={noteInputRef}
-            style={[styles.noteInput, compact && styles.noteInputCompact, { color: theme.text }]}
-            placeholder="点击输入备注或分类名"
-            placeholderTextColor={theme.tabIconDefault}
-            value={note}
-            onChangeText={onNoteChange}
-            onFocus={onNoteFocus}
-            onBlur={onNoteBlur}
-            onSubmitEditing={onSubmitEditing}
-            returnKeyType="done"
-            blurOnSubmit
-          />
-        </View>
+        <TextInput
+          ref={noteInputRef}
+          style={[styles.noteInput, compact && styles.noteInputCompact, { color: theme.text }]}
+          placeholder="点击输入备注或分类名"
+          placeholderTextColor={theme.tabIconDefault}
+          value={note}
+          onChangeText={onNoteChange}
+          onFocus={onNoteFocus}
+          onBlur={onNoteBlur}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType="done"
+          blurOnSubmit
+        />
         <Pressable
           onPress={() => {
             noteInputRef.current?.blur();
@@ -120,11 +118,17 @@ const styles = StyleSheet.create({
   },
   noteInput: {
     flex: 1,
+    height: 32,
     fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
     fontWeight: '400',
+    paddingVertical: 0,
+    textAlignVertical: 'center',
   },
   noteInputCompact: {
+    height: 30,
     fontSize: Typography.size.label,
+    lineHeight: Typography.lineHeight.label,
   },
   amountDisplay: {
     fontSize: 30,

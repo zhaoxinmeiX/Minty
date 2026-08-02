@@ -469,7 +469,8 @@ export default function AddScreen() {
   const result = useMemo(() => evaluateExpression(amount), [amount]);
   const fallbackRoute = TAB_ROUTES[lastTab as keyof typeof TAB_ROUTES] ?? TAB_ROUTES.index;
   const showNoteSuggestions = isNoteInputFocused && noteSuggestions.length > 0;
-  const noteSuggestionBottomOffset = (keyboardHeight > 0 ? keyboardHeight : insets.bottom) + 60;
+  const keyboardAvoidanceOffset = keyboardHeight > 0 ? keyboardHeight + (Platform.OS === 'android' ? insets.bottom : 0) : 0;
+  const noteSuggestionBottomOffset = (keyboardAvoidanceOffset || insets.bottom) + 60;
 
   const closeAddScreen = () => {
     if (router.canGoBack()) {
@@ -576,7 +577,7 @@ export default function AddScreen() {
         <View
           style={[
             styles.footerAvoiding,
-            isNoteInputFocused && keyboardHeight > 0 && { marginBottom: keyboardHeight },
+            isNoteInputFocused && keyboardAvoidanceOffset > 0 && { marginBottom: keyboardAvoidanceOffset },
           ]}
         >
           <View style={[styles.footer, isCompactLayout && styles.footerCompact]}>
@@ -602,10 +603,8 @@ export default function AddScreen() {
                 setHasNoteInputChanged(false);
               }}
               onNoteBlur={() => {
-                setTimeout(() => {
-                  setIsNoteInputFocused(false);
-                  setHasNoteInputChanged(false);
-                }, 120);
+                setIsNoteInputFocused(false);
+                setHasNoteInputChanged(false);
               }}
               onAmountDisplayPress={() => {
                 Keyboard.dismiss();
@@ -614,7 +613,7 @@ export default function AddScreen() {
               }}
               onSubmitEditing={() => handleSaveRecord(false)}
             />
-            {!isNoteInputFocused && (
+            {!isNoteInputFocused && keyboardHeight === 0 && (
               <NumericPad
                 onPress={handleKeyPress}
                 onDelete={handleDeletePress}
