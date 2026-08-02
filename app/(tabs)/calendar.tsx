@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Calendar as CalendarIcon, ChevronDown, ChevronRight, Plus } from 'lucide-react-native';
 import React, { startTransition, useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, FlatList, InteractionManager, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, FlatList, InteractionManager, PixelRatio, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { CalendarList, DateData } from 'react-native-calendars';
 
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
@@ -223,7 +223,11 @@ export default function CalendarScreen() {
 
   const { calendarWidth, calendarBodyHeight, dayCellSize } = useMemo(() => {
     const contentWidth = windowWidth - SCREEN_HORIZONTAL_PADDING * 2 - CALENDAR_SHELL_HORIZONTAL_PADDING * 2;
-    const resolvedCalendarWidth = Math.max(contentWidth, 0);
+    const availableCalendarWidth = Math.max(contentWidth, 0);
+    const resolvedCalendarWidth =
+      Platform.OS === 'android'
+        ? Math.floor(availableCalendarWidth * PixelRatio.get()) / PixelRatio.get()
+        : availableCalendarWidth;
     const resolvedDayCellSize = resolvedCalendarWidth / 7 - DAY_CELL_GAP;
 
     const monthStart = dayjs(`${currentMonth}-01`);
@@ -394,7 +398,7 @@ export default function CalendarScreen() {
           ))}
         </View>
 
-        <View style={[styles.calendarWrapper, { height: calendarBodyHeight }]}>
+        <View style={[styles.calendarWrapper, { width: calendarWidth, height: calendarBodyHeight }]}>
           <CalendarList
             ref={calendarRef}
             current={todayStr}
@@ -617,6 +621,7 @@ const styles = StyleSheet.create({
     paddingRight: 0,
   },
   calendarWrapper: {
+    alignSelf: 'center',
     overflow: 'hidden',
   },
   dayContainer: {
