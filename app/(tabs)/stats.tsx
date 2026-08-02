@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   },
   contentSection: {
     backgroundColor: Colors.light.homeSurface,
-    borderRadius: 32,
+    borderRadius: 24,
     paddingTop: 16,
     paddingHorizontal: 16,
     paddingBottom: 4,

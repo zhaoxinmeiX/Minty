@@ -321,6 +321,18 @@ export default function CalendarScreen() {
   );
 
   const dayRecords = useMemo(() => recordsByDate[selectedDate] || [], [recordsByDate, selectedDate]);
+  const currentMonthExpense = useMemo(
+    () =>
+      Object.entries(dailySummaries).reduce(
+        (total, [date, summary]) => (date.startsWith(`${currentMonth}-`) ? total + summary.expense : total),
+        0,
+      ),
+    [currentMonth, dailySummaries],
+  );
+  const currentMonthExpenseText = useMemo(
+    () => currentMonthExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    [currentMonthExpense],
+  );
   const monthDisplay = useMemo(() => {
     const parsed = dayjs(`${currentMonth}-01`, 'YYYY-MM-DD', true);
     return parsed.isValid() ? parsed.format('YYYY年M月') : currentMonth;
@@ -427,6 +439,11 @@ export default function CalendarScreen() {
             theme={calendarTheme}
             style={styles.calendar}
           />
+        </View>
+
+        <View style={[styles.monthExpenseRow, { borderTopColor: theme.border }]}>
+          <Text style={[styles.monthExpenseLabel, { color: theme.homeMuted }]}>本月支出</Text>
+          <Text style={[styles.monthExpenseAmount, { color: theme.expense }]}>{currentMonthExpenseText}</Text>
         </View>
       </View>
 
@@ -597,7 +614,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   calendarShell: {
-    borderRadius: 30,
+    borderRadius: 22,
     paddingHorizontal: CALENDAR_SHELL_HORIZONTAL_PADDING,
     paddingTop: 10,
     paddingBottom: 12,
@@ -624,12 +641,32 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     overflow: 'hidden',
   },
+  monthExpenseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingTop: 12,
+    paddingBottom: 2,
+  },
+  monthExpenseLabel: {
+    fontSize: Typography.size.label,
+    lineHeight: Typography.lineHeight.label,
+    fontWeight: '700',
+  },
+  monthExpenseAmount: {
+    fontSize: Typography.size.body,
+    lineHeight: Typography.lineHeight.body,
+    fontWeight: '900',
+  },
   dayContainer: {
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 8,
     paddingBottom: 8,
-    borderRadius: 16,
+    borderRadius: 12,
   },
   dateCircle: {
     minWidth: 22,
@@ -659,7 +696,7 @@ const styles = StyleSheet.create({
     paddingBottom: 132,
   },
   emptyContainer: {
-    borderRadius: 26,
+    borderRadius: 22,
     paddingVertical: 28,
     paddingHorizontal: 20,
     alignItems: 'center',
