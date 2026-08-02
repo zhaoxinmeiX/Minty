@@ -85,7 +85,7 @@ export default function StatsScreen() {
   const dataVersion = useStore((state) => state.dataVersion);
   const theme = Colors.light;
   const insets = useStableSafeAreaInsets();
-  const { ledgers } = useLedgers();
+  const { ledgers, fetchLedgers } = useLedgers();
   const statsState = useStatsScreen(db, activeLedgerId);
   const didInitialFetchRef = useRef(false);
   const lastSyncedDataVersionRef = useRef(dataVersion);
@@ -111,7 +111,7 @@ export default function StatsScreen() {
 
         const task = InteractionManager.runAfterInteractions(() => {
           void (async () => {
-            await statsState.fetchStats();
+            await Promise.all([statsState.fetchStats(), fetchLedgers()]);
             lastSyncedDataVersionRef.current = useStore.getState().dataVersion;
           })();
         });
@@ -120,7 +120,7 @@ export default function StatsScreen() {
       }
 
       setLastTab('stats');
-    }, [dataVersion, setLastTab, statsState.fetchStats]),
+    }, [dataVersion, fetchLedgers, setLastTab, statsState.fetchStats]),
   );
 
   const activeLedger = ledgers.find((ledger) => ledger.id === activeLedgerId);
@@ -170,6 +170,8 @@ export default function StatsScreen() {
   );
 
   const openLedgerPicker = useCallback(() => {
+    void fetchLedgers();
+
     if (!ledgerButtonRef.current) {
       setLedgerAnchorFrame(null);
       setIsLedgerModalVisible(true);
@@ -180,7 +182,7 @@ export default function StatsScreen() {
       setLedgerAnchorFrame({ x, y, width, height });
       setIsLedgerModalVisible(true);
     });
-  }, []);
+  }, [fetchLedgers]);
 
   const renderRankingItem = ({ item, index }: { item: CategoryStat; index: number }) => {
     const Icon = getIconComponent(item.icon);
