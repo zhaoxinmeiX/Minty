@@ -654,25 +654,25 @@ export default function AddScreen() {
       />
 
       <CategoryManager
-        visible={modalType === 'manage_cats'}
+        visible={modalType === 'manage_cats' || modalType === 'edit_cat'}
         type={type}
         onClose={() => setModalType('none')}
         onEdit={(category) => {
           setEditingCategory(category);
           setModalType('edit_cat');
         }}
-      />
-
-      <CategoryEditModal
-        visible={modalType === 'edit_cat'}
-        editingCategory={editingCategory}
-        onSave={handleSaveCategory}
-        onCancel={() => {
-          setEditingCategory(null);
-          setModalType('manage_cats');
-        }}
-        onChange={setEditingCategory}
-      />
+      >
+        <CategoryEditModal
+          visible={modalType === 'edit_cat'}
+          editingCategory={editingCategory}
+          onSave={handleSaveCategory}
+          onCancel={() => {
+            setEditingCategory(null);
+            setModalType('manage_cats');
+          }}
+          onChange={setEditingCategory}
+        />
+      </CategoryManager>
 
       <DateTimePickerModal
         visible={modalType === 'datetime'}

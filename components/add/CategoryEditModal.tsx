@@ -3,7 +3,7 @@ import { Typography } from '@/constants/Typography';
 import { getIconComponent, ICON_GROUPS, SELECTABLE_ICONS } from '@/src/constants/icons';
 import { EditingCategory } from '@/src/types';
 import React, { useMemo } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface CategoryEditModalProps {
   visible: boolean;
@@ -24,14 +24,13 @@ export const CategoryEditModal: React.FC<CategoryEditModalProps> = ({ visible, e
     return [{ label: '当前', icons: [editingCategory.icon] }, ...ICON_GROUPS];
   }, [editingCategory?.icon]);
 
-  if (!editingCategory) return null;
+  if (!visible || !editingCategory) return null;
 
   const CurrentIcon = getIconComponent(editingCategory.icon);
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.editBox, { backgroundColor: theme.card }]}>
+    <View style={[styles.modalOverlay, styles.embeddedOverlay]} onStartShouldSetResponder={() => true}>
+      <View style={[styles.editBox, { backgroundColor: theme.card }]}>
           {/* Header: icon preview + title + name input */}
           <View style={styles.editHeader}>
             <View style={[styles.currentIconPreview, { backgroundColor: accentColor + '18' }]}>
@@ -97,9 +96,8 @@ export const CategoryEditModal: React.FC<CategoryEditModalProps> = ({ visible, e
               <Text style={{ color: '#000', fontWeight: 'bold', fontSize: Typography.size.body }}>保存</Text>
             </Pressable>
           </View>
-        </View>
       </View>
-    </Modal>
+    </View>
   );
 };
 
@@ -109,6 +107,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  embeddedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    elevation: 10,
   },
   editBox: {
     width: '88%',

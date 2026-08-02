@@ -12,9 +12,10 @@ interface CategoryManagerProps {
   type: 'expense' | 'income';
   onClose: () => void;
   onEdit: (cat: EditingCategory) => void;
+  children?: React.ReactNode;
 }
 
-export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type, onClose, onEdit }) => {
+export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type, onClose, onEdit, children }) => {
   const theme = Colors.light;
   const accentColor = theme.accent;
 
@@ -103,6 +104,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type,
           </Pressable>
         </ScrollView>
       </View>
+      {children}
     </Modal>
   );
 };
