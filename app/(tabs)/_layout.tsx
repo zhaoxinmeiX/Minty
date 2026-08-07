@@ -1,26 +1,39 @@
-import { Tabs } from 'expo-router';
-import { BarChart3, Calendar, Home, Settings } from 'lucide-react-native';
+import { Tabs, useRouter } from 'expo-router';
+import { BarChart3, Calendar, Home, Plus, Settings } from 'lucide-react-native';
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { ScreenBackground } from '@/components/common/ScreenBackground';
 
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useNavigationGuard } from '@/src/hooks/useNavigationGuard';
 import { useStore } from '@/src/store';
 
 export default function TabLayout() {
   const themeColors = Colors.light;
+  const router = useRouter();
+  const navigateOnce = useNavigationGuard();
   const isHomeLaunchOverlayVisible = useStore((state) => state.isHomeLaunchOverlayVisible);
 
-  const TabIcon = ({ Icon, title, color, focused }: { Icon: any; title: string; color: string; focused: boolean }) => (
+  const TabIcon = ({ Icon, title, color, focused, isAdd }: { Icon?: any; title?: string; color: string; focused: boolean; isAdd?: boolean }) => (
     <View style={styles.iconContainer}>
       {focused && (
         <View style={[styles.activePill, { backgroundColor: 'rgba(110, 125, 66, 0.12)' }]} />
       )}
-      <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-      <Text style={[styles.tabLabel, { color, fontWeight: focused ? '800' : '600' }]}>
-        {title}
-      </Text>
+      {isAdd ? (
+        <View style={[styles.addPill, { backgroundColor: themeColors.homeAccent }]}>
+          <Plus size={22} color="#FFF" strokeWidth={2.8} />
+        </View>
+      ) : (
+        <>
+          <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          {title ? (
+            <Text style={[styles.tabLabel, { color, fontWeight: focused ? '800' : '600' }]}>
+              {title}
+            </Text>
+          ) : null}
+        </>
+      )}
     </View>
   );
 
@@ -89,6 +102,22 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="add-tab"
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              navigateOnce(() => router.push('/add'));
+            },
+          }}
+          options={{
+            headerShown: false,
+            title: '记账',
+            tabBarIcon: ({ color }) => (
+              <TabIcon color={color} focused={false} isAdd />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="stats"
           options={{
             headerShown: false,
@@ -135,6 +164,13 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 20,
     top: -2,
+  },
+  addPill: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tabLabel: {
     fontSize: Typography.size.caption,

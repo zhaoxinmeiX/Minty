@@ -182,7 +182,16 @@ function RootLayoutNav() {
           <Stack.Screen name="ledgers" options={{ headerShown: false, animation: horizontalAnimation }} />
           <Stack.Screen name="search" options={{ headerShown: false, animation: horizontalAnimation }} />
           <Stack.Screen name="bills" options={{ headerShown: false, animation: horizontalAnimation }} />
-          <Stack.Screen name="add" options={{ headerShown: false, animation: verticalAnimation }} />
+          <Stack.Screen
+            name="add"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_bottom',
+              gestureEnabled: true,
+              gestureDirection: 'vertical',
+              fullScreenGestureEnabled: true,
+            }}
+          />
         </Stack>
       </SQLiteProvider>
     </SafeAreaProvider>

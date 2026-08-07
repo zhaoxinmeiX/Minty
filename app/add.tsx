@@ -1,7 +1,7 @@
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronLeft, Hexagon } from 'lucide-react-native';
+import { Hexagon, X } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, AppState, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
@@ -478,10 +478,9 @@ export default function AddScreen() {
     navigateOnce(() => {
       if (router.canGoBack()) {
         router.back();
-        return;
+      } else {
+        router.dismissTo(fallbackRoute);
       }
-
-      router.replace(fallbackRoute);
     });
   };
 
@@ -499,18 +498,18 @@ export default function AddScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top + 8 }]}>
+    <View style={[styles.container, { backgroundColor: theme.homeBackground, paddingTop: insets.top }]}>
       <ScreenBackground />
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="dark" />
 
-      <View style={[styles.topSection, isCompactLayout && styles.topSectionCompact]}>
-        <View style={[styles.header, isCompactLayout && styles.headerCompact]}>
+      <View style={styles.topSection}>
+        <View style={styles.header}>
           <Pressable
             onPress={closeAddScreen}
-            style={[styles.headerIcon, isCompactLayout && styles.headerIconCompact, { backgroundColor: theme.homeSurface }]}
+            style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}
           >
-            <ChevronLeft size={22} color={theme.homeOlive} />
+            <X size={20} color={theme.homeOlive} />
           </Pressable>
 
           <View style={[styles.segmentControl, isCompactLayout && styles.segmentControlCompact, { backgroundColor: theme.homeSurface }]}>
@@ -528,11 +527,10 @@ export default function AddScreen() {
             </Pressable>
           </View>
 
-          <Pressable onPress={() => setModalType('manage_cats')} style={[styles.headerIcon, isCompactLayout && styles.headerIconCompact, { backgroundColor: theme.homeSurface }]}>
+          <Pressable onPress={() => setModalType('manage_cats')} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
             <Hexagon size={20} color={theme.homeOlive} />
           </Pressable>
         </View>
-
       </View>
 
       <View style={[styles.contentSheet, isCompactLayout && styles.contentSheetCompact, { backgroundColor: theme.homeSurface, flex: 1 }]}>
@@ -718,35 +716,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topSection: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 10,
-  },
-  topSectionCompact: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingTop: 6,
-    paddingBottom: 8,
+    paddingBottom: 6,
   },
   header: {
-    height: 54,
+    minHeight: 44,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerCompact: {
-    height: 50,
-  },
   headerIcon: {
     width: 44,
     height: 44,
-    borderRadius: 18,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  headerIconCompact: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
+    shadowColor: '#A9B66D',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   segmentControl: {
     flexDirection: 'row',

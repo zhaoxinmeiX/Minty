@@ -397,18 +397,6 @@ export default function RecordsScreen() {
         }
       />
 
-      <Pressable accessibilityRole="button" onPress={openAddPage} onLongPress={openRecurringPage} delayLongPress={400} style={styles.fabWrap}>
-        {({ pressed }) => (
-          <LinearGradient
-            colors={[theme.homeAccent, '#E4743F']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.fab, pressed && styles.fabPressed]}
-          >
-            <Plus size={24} color="#FFF" strokeWidth={2.8} />
-          </LinearGradient>
-        )}
-      </Pressable>
 
       <RecordDetailSheet
         visible={isDetailVisible}
