@@ -14,6 +14,7 @@ export default function SettingsScreen() {
   const navigateOnce = useNavigationGuard();
   const nickname = useStore((state) => state.nickname);
   const setNickname = useStore((state) => state.setNickname);
+  const setSelectedDateContext = useStore((state) => state.setSelectedDateContext);
   const setLastTab = useStore((state) => state.setLastTab);
   const theme = Colors.light;
   const insets = useStableSafeAreaInsets();
@@ -25,7 +26,8 @@ export default function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       setLastTab('settings');
-    }, [setLastTab]),
+      setSelectedDateContext(null);
+    }, [setLastTab, setSelectedDateContext]),
   );
 
   const handleEditNickname = () => {

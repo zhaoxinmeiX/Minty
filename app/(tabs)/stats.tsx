@@ -83,6 +83,7 @@ export default function StatsScreen() {
   const navigateOnce = useNavigationGuard();
   const activeLedgerId = useStore((state) => state.activeLedgerId);
   const setActiveLedgerId = useStore((state) => state.setActiveLedgerId);
+  const setSelectedDateContext = useStore((state) => state.setSelectedDateContext);
   const setLastTab = useStore((state) => state.setLastTab);
   const dataVersion = useStore((state) => state.dataVersion);
   const theme = Colors.light;
@@ -105,9 +106,11 @@ export default function StatsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setSelectedDateContext(null);
+      setLastTab('stats');
+
       if (didInitialFetchRef.current) {
         if (lastSyncedDataVersionRef.current === dataVersion) {
-          setLastTab('stats');
           return;
         }
 
@@ -117,12 +120,9 @@ export default function StatsScreen() {
             lastSyncedDataVersionRef.current = useStore.getState().dataVersion;
           })();
         });
-        setLastTab('stats');
         return () => task.cancel();
       }
-
-      setLastTab('stats');
-    }, [dataVersion, fetchLedgers, setLastTab, statsState.fetchStats]),
+    }, [dataVersion, fetchLedgers, setSelectedDateContext, setLastTab, statsState.fetchStats]),
   );
 
   const activeLedger = ledgers.find((ledger) => ledger.id === activeLedgerId);

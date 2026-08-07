@@ -156,6 +156,7 @@ export default function RecordsScreen() {
   useFocusEffect(
     useCallback(() => {
       setLastTab('index');
+      setSelectedDateContext(null);
 
       if (!hasFocusedRef.current) {
         return;

@@ -153,6 +153,7 @@ export default function CalendarScreen() {
   useFocusEffect(
     useCallback(() => {
       setLastTab('calendar');
+      setSelectedDateContext(selectedDate);
 
       if (!hasFocusedRef.current) {
         return;
