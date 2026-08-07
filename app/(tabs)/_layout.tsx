@@ -15,27 +15,31 @@ export default function TabLayout() {
   const navigateOnce = useNavigationGuard();
   const isHomeLaunchOverlayVisible = useStore((state) => state.isHomeLaunchOverlayVisible);
 
-  const TabIcon = ({ Icon, title, color, focused, isAdd }: { Icon?: any; title?: string; color: string; focused: boolean; isAdd?: boolean }) => (
-    <View style={styles.iconContainer}>
-      {focused && (
-        <View style={[styles.activePill, { backgroundColor: 'rgba(110, 125, 66, 0.12)' }]} />
-      )}
-      {isAdd ? (
-        <View style={[styles.addPill, { backgroundColor: themeColors.homeAccent }]}>
-          <Plus size={22} color="#FFF" strokeWidth={2.8} />
+  const TabIcon = ({ Icon, title, color, focused, isAdd }: { Icon?: any; title?: string; color: string; focused: boolean; isAdd?: boolean }) => {
+    if (isAdd) {
+      return (
+        <View style={styles.addIconContainer}>
+          <View style={[styles.addPill, { backgroundColor: themeColors.homeAccent }]}>
+            <Plus size={28} color="#FFF" strokeWidth={3} />
+          </View>
         </View>
-      ) : (
-        <>
-          <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-          {title ? (
-            <Text style={[styles.tabLabel, { color, fontWeight: focused ? '800' : '600' }]}>
-              {title}
-            </Text>
-          ) : null}
-        </>
-      )}
-    </View>
-  );
+      );
+    }
+
+    return (
+      <View style={styles.iconContainer}>
+        {focused && (
+          <View style={[styles.activePill, { backgroundColor: 'rgba(110, 125, 66, 0.12)' }]} />
+        )}
+        <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+        {title ? (
+          <Text style={[styles.tabLabel, { color, fontWeight: focused ? '800' : '600' }]}>
+            {title}
+          </Text>
+        ) : null}
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -165,12 +169,24 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     top: -2,
   },
-  addPill: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  addIconContainer: {
+    width: 64,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 2,
+  },
+  addPill: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#F98C58',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
   },
   tabLabel: {
     fontSize: Typography.size.caption,

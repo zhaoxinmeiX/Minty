@@ -434,12 +434,12 @@ const styles = StyleSheet.create({
   fixedHeader: {
     paddingHorizontal: 16,
     paddingTop: 6,
-    paddingBottom: 0,
+    paddingBottom: 12,
     zIndex: 1,
   },
   listHeaderContainer: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 6,
     paddingBottom: 12,
   },
   sectionBlock: {
