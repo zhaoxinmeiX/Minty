@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { BookText, ChevronRight, CircleEllipsis, Database, User } from 'lucide-react-native';
+import { BookText, ChevronRight, CircleEllipsis, Database, LayoutGrid, User } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -127,6 +127,19 @@ export default function SettingsScreen() {
                 <View style={styles.listTextWrap}>
                   <Text style={[styles.listTitle, { color: theme.text }]}>账本管理</Text>
                   <Text style={[styles.listHint, { color: theme.homeMuted }]}>创建和切换不同账本</Text>
+                </View>
+                <ChevronRight size={18} color={theme.homeOlive} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Pressable style={styles.listItem} onPress={() => navigateOnce(() => router.push('/categories'))}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#F0EAFB' }]}>
+                  <LayoutGrid size={20} color={theme.homeOlive} />
+                </View>
+                <View style={styles.listTextWrap}>
+                  <Text style={[styles.listTitle, { color: theme.text }]}>分类管理</Text>
+                  <Text style={[styles.listHint, { color: theme.homeMuted }]}>自定义主分类与二级分类</Text>
                 </View>
                 <ChevronRight size={18} color={theme.homeOlive} />
               </Pressable>

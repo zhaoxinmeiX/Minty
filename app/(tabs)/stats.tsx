@@ -7,6 +7,7 @@ import { FlatList, InteractionManager, Pressable, StyleSheet, Text, View } from 
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { LedgerPickerAnchorFrame, LedgerPickerModal } from '@/components/add/LedgerPickerModal';
+import { TypeSegmentControl } from '@/components/common/TypeSegmentControl';
 import { StatsDonutChart } from '@/components/stats/StatsDonutChart';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -335,14 +336,10 @@ export default function StatsScreen() {
               </View>
 
               <View style={styles.flowTypeWrap}>
-                <SegmentedControl
-                  options={[
-                    { value: 'expense', label: '支出' },
-                    { value: 'income', label: '收入' },
-                  ]}
-                  value={statsState.type}
-                  onChange={(val) => statsState.setType(val)}
-                  activeColor={statsState.type === 'expense' ? theme.expense : theme.income}
+                <TypeSegmentControl
+                  type={statsState.type}
+                  onChange={statsState.setType}
+                  backgroundColor={theme.homeSection}
                 />
               </View>
 

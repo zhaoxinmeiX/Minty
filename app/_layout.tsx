@@ -180,6 +180,7 @@ function RootLayoutNav() {
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
           <Stack.Screen name="data-management" options={{ headerShown: false, animation: horizontalAnimation }} />
           <Stack.Screen name="ledgers" options={{ headerShown: false, animation: horizontalAnimation }} />
+          <Stack.Screen name="categories" options={{ headerShown: false, animation: horizontalAnimation }} />
           <Stack.Screen name="search" options={{ headerShown: false, animation: horizontalAnimation }} />
           <Stack.Screen name="bills" options={{ headerShown: false, animation: horizontalAnimation }} />
           <Stack.Screen

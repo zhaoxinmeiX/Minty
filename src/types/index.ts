@@ -18,7 +18,7 @@ export type ModalType = 'none' | 'datetime' | 'ledger' | 'manage_cats' | 'edit_c
 export interface CategoryPopoverProps {
   visible: boolean;
   subs: Category[];
-  position: PopoverPosition;
+  targetRect: { x: number; y: number; width: number; height: number } | null;
   selectedSub: Category | null;
   onSelect: (sub: Category | null) => void;
   onClose: () => void;

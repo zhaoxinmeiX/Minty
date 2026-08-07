@@ -16,6 +16,7 @@ import { NoteSuggestionList } from '@/components/add/NoteSuggestionList';
 import { NumericPad } from '@/components/add/NumericPad';
 import { RecurringSettingsPanel } from '@/components/add/RecurringSettingsPanel';
 import { ScreenBackground } from '@/components/common/ScreenBackground';
+import { TypeSegmentControl } from '@/components/common/TypeSegmentControl';
 import { RecordDetailSheet } from '@/components/record/RecordDetailSheet';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -512,22 +513,9 @@ export default function AddScreen() {
             <X size={20} color={theme.homeOlive} />
           </Pressable>
 
-          <View style={[styles.segmentControl, isCompactLayout && styles.segmentControlCompact, { backgroundColor: theme.homeSurface }]}>
-            <Pressable
-              onPress={() => setType('expense')}
-              style={[styles.segmentBtn, isCompactLayout && styles.segmentBtnCompact, type === 'expense' && { backgroundColor: theme.homeAccent }]}
-            >
-              <Text style={[styles.segmentText, { color: type === 'expense' ? '#FFF' : theme.homeMuted }]}>支出</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setType('income')}
-              style={[styles.segmentBtn, isCompactLayout && styles.segmentBtnCompact, type === 'income' && { backgroundColor: theme.income }]}
-            >
-              <Text style={[styles.segmentText, { color: type === 'income' ? '#FFF' : theme.homeMuted }]}>收入</Text>
-            </Pressable>
-          </View>
+          <TypeSegmentControl type={type} onChange={setType} compact={isCompactLayout} />
 
-          <Pressable onPress={() => setModalType('manage_cats')} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
+          <Pressable onPress={() => navigateOnce(() => router.push({ pathname: '/categories', params: { type } }))} style={[styles.headerIcon, { backgroundColor: theme.homeSurface }]}>
             <Hexagon size={20} color={theme.homeOlive} />
           </Pressable>
         </View>
@@ -568,7 +556,7 @@ export default function AddScreen() {
               selectedCategory={selectedCategory}
               selectedSubCategory={selectedSubCategory}
               onSelectMain={handleSelectMainCategory}
-              onManage={() => setModalType('manage_cats')}
+              onManage={() => navigateOnce(() => router.push({ pathname: '/categories', params: { type } }))}
               categoryRefs={popover.categoryRefs}
               accentColor={accentColor}
               compact={isCompactLayout}
@@ -645,7 +633,7 @@ export default function AddScreen() {
       <CategoryPopover
         visible={popover.isVisible}
         subs={popover.subs}
-        position={popover.position}
+        targetRect={popover.targetRect}
         selectedSub={selectedSubCategory}
         onSelect={(sub) => {
           setSelectedSubCategory(sub);
@@ -653,27 +641,6 @@ export default function AddScreen() {
         }}
         onClose={popover.close}
       />
-
-      <CategoryManager
-        visible={modalType === 'manage_cats' || modalType === 'edit_cat'}
-        type={type}
-        onClose={() => setModalType('none')}
-        onEdit={(category) => {
-          setEditingCategory(category);
-          setModalType('edit_cat');
-        }}
-      >
-        <CategoryEditModal
-          visible={modalType === 'edit_cat'}
-          editingCategory={editingCategory}
-          onSave={handleSaveCategory}
-          onCancel={() => {
-            setEditingCategory(null);
-            setModalType('manage_cats');
-          }}
-          onChange={setEditingCategory}
-        />
-      </CategoryManager>
 
       <DateTimePickerModal
         visible={modalType === 'datetime'}

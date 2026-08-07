@@ -1,16 +1,22 @@
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { getIconComponent } from '@/src/constants/icons';
+import { getPopoverWidth, POPOVER_ITEM_WIDTH } from '@/src/hooks/useCategoryPopover';
 import { CategoryPopoverProps } from '@/src/types';
 import { LayoutGrid } from 'lucide-react-native';
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Popover, { PopoverMode, PopoverPlacement, Rect } from 'react-native-popover-view';
 
-export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs, position, selectedSub, onSelect, onClose }) => {
+export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs, targetRect, selectedSub, onSelect, onClose }) => {
   const theme = Colors.light;
   const accentColor = theme.accent;
   const iconBackgroundColor = theme.homeSurfaceStrong;
-  const shouldScroll = subs.length + 1 > 12;
+  const totalItems = subs.length + 1;
+  const shouldScroll = totalItems > 12;
+  const popWidth = getPopoverWidth(totalItems);
+
+  const fromRect = targetRect ? new Rect(targetRect.x, targetRect.y, targetRect.width, targetRect.height) : undefined;
 
   const bubbleContent = (
     <View style={styles.bubbleGrid}>
@@ -18,7 +24,7 @@ export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs,
         <View style={[styles.bubbleIcon, { backgroundColor: iconBackgroundColor }]}>
           <LayoutGrid size={20} color={!selectedSub ? accentColor : theme.popoverText} />
         </View>
-        <Text style={[styles.bubbleText, { color: theme.popoverText }, !selectedSub && { color: accentColor, fontWeight: 'bold' }]}>全部</Text>
+        <Text numberOfLines={1} style={[styles.bubbleText, { color: theme.popoverText }, !selectedSub && { color: accentColor, fontWeight: 'bold' }]}>全部</Text>
       </Pressable>
       {subs.map((sub) => {
         const SubIcon = getIconComponent(sub.icon);
@@ -28,7 +34,7 @@ export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs,
             <View style={[styles.bubbleIcon, { backgroundColor: iconBackgroundColor }]}>
               <SubIcon size={20} color={isSubSel ? accentColor : theme.popoverText} />
             </View>
-            <Text style={[styles.bubbleText, { color: theme.popoverText }, isSubSel && { color: accentColor, fontWeight: 'bold' }]}>{sub.name}</Text>
+            <Text numberOfLines={1} style={[styles.bubbleText, { color: theme.popoverText }, isSubSel && { color: accentColor, fontWeight: 'bold' }]}>{sub.name}</Text>
           </Pressable>
         );
       })}
@@ -36,46 +42,48 @@ export const CategoryPopover: React.FC<CategoryPopoverProps> = ({ visible, subs,
   );
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlayCentered}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.popoverBubble, { backgroundColor: theme.popoverBg, position: 'absolute', top: position.top, left: position.left }]}>
-          <View style={[styles.bubbleArrow, { left: position.arrowLeft, backgroundColor: theme.popoverBg }]} />
-          {shouldScroll ? (
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.bubbleScroll} contentContainerStyle={styles.bubbleScrollContent}>
-              {bubbleContent}
-            </ScrollView>
-          ) : (
-            <View style={styles.bubbleStaticContent}>{bubbleContent}</View>
-          )}
-        </View>
-      </View>
-    </Modal>
+    <Popover
+      isVisible={visible}
+      from={fromRect}
+      onRequestClose={onClose}
+      placement={PopoverPlacement.BOTTOM}
+      mode={PopoverMode.JS_MODAL}
+      arrowSize={{ width: 16, height: 10 }}
+      offset={4}
+      popoverStyle={[
+        styles.popoverBubble,
+        {
+          backgroundColor: theme.popoverBg,
+          width: popWidth,
+        },
+      ]}
+      backgroundStyle={styles.popoverBackground}
+    >
+      {shouldScroll ? (
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.bubbleScroll} contentContainerStyle={styles.bubbleScrollContent}>
+          {bubbleContent}
+        </ScrollView>
+      ) : (
+        <View style={styles.bubbleStaticContent}>{bubbleContent}</View>
+      )}
+    </Popover>
   );
 };
 
 const styles = StyleSheet.create({
-  overlayCentered: {
-    flex: 1,
+  popoverBackground: {
     backgroundColor: 'rgba(44,52,32,0.12)',
   },
   popoverBubble: {
-    width: '80%',
-    borderRadius: 24,
+    borderRadius: 22,
     paddingHorizontal: 14,
     paddingTop: 14,
     paddingBottom: 10,
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
     elevation: 10,
-  },
-  bubbleArrow: {
-    position: 'absolute',
-    top: -10,
-    width: 20,
-    height: 20,
-    transform: [{ rotate: '45deg' }],
   },
   bubbleGrid: {
     flexDirection: 'row',
@@ -83,7 +91,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   bubbleItem: {
-    width: '20%', // 100% / 5 columns
+    width: POPOVER_ITEM_WIDTH,
     alignItems: 'center',
     marginBottom: 12,
   },

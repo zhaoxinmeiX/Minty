@@ -37,8 +37,11 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type,
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={[styles.manageContainer, { backgroundColor: theme.background }]}>
+        <View style={styles.dragHandleContainer}>
+          <View style={[styles.dragHandle, { backgroundColor: theme.tabIconDefault + '40' }]} />
+        </View>
         <View style={styles.manageHeader}>
           <Text style={[styles.manageTitle, { color: theme.text }]}>管理分类</Text>
           <Pressable onPress={onClose}>
@@ -110,8 +113,10 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ visible, type,
 };
 
 const styles = StyleSheet.create({
-  manageContainer: { flex: 1, paddingTop: 20 },
-  manageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
+  manageContainer: { flex: 1, paddingTop: 10 },
+  dragHandleContainer: { alignItems: 'center', paddingTop: 8, paddingBottom: 4 },
+  dragHandle: { width: 36, height: 5, borderRadius: 3 },
+  manageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16, paddingTop: 8 },
   manageTitle: { fontSize: Typography.size.title, fontWeight: 'bold' },
   treeRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 4 },
   subTreeRow: { marginLeft: 30, paddingVertical: 12 },

@@ -1,15 +1,28 @@
 import { Category } from '@/src/db/schema';
 import { PopoverPosition } from '@/src/types';
 import { useCallback, useRef, useState } from 'react';
-import { Dimensions, View } from 'react-native';
+import { Dimensions, Platform, StatusBar, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
-const CATEGORY_POPOVER_WIDTH_RATIO = 0.84;
+export const POPOVER_ITEM_WIDTH = 60;
+export const POPOVER_PADDING_H = 14;
+
+export function getPopoverWidth(itemCount: number): number {
+  const columns = Math.min(Math.max(itemCount, 1), 5);
+  return columns * POPOVER_ITEM_WIDTH + POPOVER_PADDING_H * 2;
+}
+
+export interface PopoverRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export function useCategoryPopover() {
   const [isVisible, setIsVisible] = useState(false);
   const [subs, setSubs] = useState<Category[]>([]);
-  const [position, setPosition] = useState<PopoverPosition>({ top: 0, left: 0, arrowLeft: 0 });
+  const [targetRect, setTargetRect] = useState<PopoverRect | null>(null);
   const categoryRefs = useRef<Map<number, View>>(new Map());
 
   const open = useCallback((cat: Category, subCategories: Category[]) => {
@@ -20,16 +33,14 @@ export function useCategoryPopover() {
     }
 
     ref.measureInWindow((x, y, w, h) => {
-      const popWidth = width * CATEGORY_POPOVER_WIDTH_RATIO;
-      const targetCenterX = x + w / 2;
+      const statusBarOffset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 0;
+      const targetY = y + statusBarOffset;
 
-      const popLeft = Math.max(10, Math.min(targetCenterX - popWidth / 2, width - popWidth - 10));
-      const arrowX = targetCenterX - popLeft - 10;
-
-      setPosition({
-        top: y + h + 20,
-        left: popLeft,
-        arrowLeft: arrowX,
+      setTargetRect({
+        x,
+        y: targetY,
+        width: w,
+        height: h,
       });
       setSubs(subCategories);
       setIsVisible(true);
@@ -43,7 +54,7 @@ export function useCategoryPopover() {
   return {
     isVisible,
     subs,
-    position,
+    targetRect,
     categoryRefs,
     open,
     close,

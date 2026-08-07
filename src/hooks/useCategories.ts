@@ -8,6 +8,7 @@ import { useStore } from '@/src/store';
 export function useCategories(type: 'expense' | 'income') {
   const db = useSQLiteContext();
   const bumpDataVersion = useStore((state) => state.bumpDataVersion);
+  const dataVersion = useStore((state) => state.dataVersion);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,7 +24,7 @@ export function useCategories(type: 'expense' | 'income') {
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchCategories, dataVersion]);
 
   const add = useCallback((name: string, icon: string, parentId: number | null = null) => {
     addCategory(db, name, icon, type, parentId);
