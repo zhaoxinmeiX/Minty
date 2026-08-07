@@ -112,6 +112,9 @@ export default function TabLayout() {
               e.preventDefault();
               navigateOnce(() => router.push('/add'));
             },
+            tabLongPress: () => {
+              navigateOnce(() => router.push({ pathname: '/add', params: { mode: 'recurring' } }));
+            },
           }}
           options={{
             headerShown: false,
