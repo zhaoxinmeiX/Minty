@@ -13,7 +13,13 @@ interface CategoryEditModalProps {
   onChange: (cat: EditingCategory) => void;
 }
 
-export const CategoryEditModal: React.FC<CategoryEditModalProps> = ({ visible, editingCategory, onSave, onCancel, onChange }) => {
+export const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
+  visible,
+  editingCategory,
+  onSave,
+  onCancel,
+  onChange,
+}) => {
   const theme = Colors.light;
   const accentColor = theme.accent;
 
@@ -179,9 +185,14 @@ const styles = StyleSheet.create({
   },
   editFooter: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 16,
     marginTop: 12,
+  },
+  editDeleteBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
   },
   editCancel: {
     padding: 12,
